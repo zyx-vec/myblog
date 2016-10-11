@@ -1,0 +1,312 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Post-rsses on TL;DR BLOG</title>
+    <link>https://zyx-vec.github.io/myblog/post/index.xml</link>
+    <description>Recent content in Post-rsses on TL;DR BLOG</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-CN</language>
+    <lastBuildDate>Tue, 11 Oct 2016 16:38:44 +0800</lastBuildDate>
+    <atom:link href="https://zyx-vec.github.io/myblog/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>C&#43;&#43;中的devirtualization</title>
+      <link>https://zyx-vec.github.io/myblog/post/devirtualization/</link>
+      <pubDate>Tue, 11 Oct 2016 16:38:44 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/devirtualization/</guid>
+      <description>&lt;p&gt;我们都知道 C++ 中通过对象中的 &lt;code&gt;vptr&lt;/code&gt; 指向 &lt;code&gt;vtable&lt;/code&gt; 来实现多态，当然只有指针和引用才能表现出多态，否则的话会发生 &lt;code&gt;slicing&lt;/code&gt;，调用构造或者拷贝构造函数，进而重新设置虚表指针 vptr 就不能实现多态。&lt;/p&gt;
+
+&lt;p&gt;但 &lt;code&gt;devirtualization&lt;/code&gt; 是什么？解虚拟？从字面中我们也能看出，它表面上是虚函数调用，但实际进行的确是 &lt;code&gt;static&lt;/code&gt; 的调用，也即编译器将虚函数的调用在编译期就进行了决议（&lt;code&gt;resolution&lt;/code&gt;），消除了常规虚函数调用的动作，因为虚函数在运行时调用会经过多次的 &lt;code&gt;indirection&lt;/code&gt; ，性能上会有影响，常规虚函数调用会多出几次内存访问，无论对于指令的条数，还是内存访问中的 &lt;code&gt;Cache&lt;/code&gt; 局部性都会对性能造成一定的影响。较新版的编译器能够通过 C++11 中的关键词来进行指导 &lt;code&gt;devirtualization&lt;/code&gt; ，这个关键词就是 &lt;code&gt;final&lt;/code&gt;，因为虚函数中的 &lt;code&gt;override&lt;/code&gt; 可以通过 &lt;code&gt;final&lt;/code&gt; 来指定终止继续对该虚函数的 &lt;code&gt;override&lt;/code&gt;，所以当传递过来的对象指针调用其所在 &lt;code&gt;scope&lt;/code&gt; 中的虚函数时，碰巧该虚函数有 &lt;code&gt;final&lt;/code&gt; 关键词的修饰，那么编译器就可以&lt;strong&gt;&lt;em&gt;断定&lt;/em&gt;&lt;/strong&gt;其一定是调用该类型指针内部的对应的那个虚函数。&lt;/p&gt;
+
+&lt;p&gt;我们可以测试一下代码来看一看 &lt;code&gt;devirtualization&lt;/code&gt; 到底表现出来是什么&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;#include &amp;lt;iostream&amp;gt;
+
+class Base {
+public:
+	virtual int value() { return 0; }
+};
+
+class Derived : public Base {
+public:
+	int value() final { return 1; }	// final is as an indicator to compiler
+};
+
+int foo(Derived* d) {
+	return d-&amp;gt;value() + 13;
+}
+
+int main() {
+	Derived d;
+	int i = foo(&amp;amp;d);
+	return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;利用指令 &lt;code&gt;g++ test.cpp -g -std=c++11&lt;/code&gt;来编译生成可执行程序，因为要用到 C++11 中的特性 &lt;code&gt;final&lt;/code&gt; 所以要指定编译的环境。&lt;/p&gt;
+
+&lt;p&gt;利用反汇编工具 &lt;code&gt;objdump&lt;/code&gt; 将生成的可执行文件反汇编成汇编代码，看一看到底发生了什么，反汇编用到的指令为 &lt;code&gt;objdump -d a.out &amp;gt; devir_cpp11.asm&lt;/code&gt; 将其重定向到新文件中以便查看。&lt;/p&gt;
+
+&lt;p&gt;利用编辑器查看反汇编得到的汇编代码，可以发现对 &lt;code&gt;d-&amp;gt;value()&lt;/code&gt; 的调用是如下的指令&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;00401410 &amp;lt;__Z3fooP7Derived&amp;gt;:
+  401410:	55                   	push   %ebp
+  401411:	89 e5                	mov    %esp,%ebp
+  401413:	8b 4d 08             	mov    0x8(%ebp),%ecx	// 获得对象地址，作为参数
+  401416:	e8 65 6d 00 00       	call   408180 &amp;lt;__ZN7Derived5valueEv&amp;gt; // d-&amp;gt;value()
+  40141b:	83 c0 0d             	add    $0xd,%eax
+  40141e:	5d                   	pop    %ebp
+  40141f:	c3                   	ret
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;而如果没有利用 final 来给编译做指导，那么最终得到的汇编指令就会是下面这样的&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;00401410 &amp;lt;__Z3fooP7Derived&amp;gt;:
+  401410:	55                   	push   %ebp
+  401411:	89 e5                	mov    %esp,%ebp
+  401413:	83 ec 08             	sub    $0x8,%esp
+  401416:	8b 45 08             	mov    0x8(%ebp),%eax	// 获得对象的地址
+  401419:	8b 00                	mov    (%eax),%eax		// 取出 vptr
+  40141b:	8b 00                	mov    (%eax),%eax		// 取出 vtable 中的函数指针值
+  40141d:	8b 4d 08             	mov    0x8(%ebp),%ecx	// 获得对象地址，作为参数
+  401420:	ff d0                	call   *%eax			// 调用 d-&amp;gt;value()
+  401422:	83 c0 0d             	add    $0xd,%eax
+  401425:	c9                   	leave  
+  401426:	c3                   	ret
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;对比两者，可以发现使用了 final 的虚函数的调用并没有用到虚指针 vptr 和虚表 vtable，而是直接进行调用，可见是编译器对此作出了优化；而没有使用 final 的版本就进行了 vptr 和 vtable 的操作，多了很多的操作。&lt;/p&gt;
+
+&lt;p&gt;可见随着C++的不断演化，语言中特性的增加，编译器能做的事情也越来越多；从上述的对比中也可以推测性能也会有一定的提升。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>gdb 基本命令</title>
+      <link>https://zyx-vec.github.io/myblog/post/gdb-commands/</link>
+      <pubDate>Tue, 11 Oct 2016 16:33:09 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/gdb-commands/</guid>
+      <description>&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;GDB 是什么？&lt;/strong&gt;
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒七百多页！&lt;/p&gt;
+
+&lt;p&gt;官方文档：[&lt;a href=&#34;https://www.gnu.org/software/gdb/documentation/](&#34;&gt;https://www.gnu.org/software/gdb/documentation/](&lt;/a&gt;)&lt;/p&gt;
+
+&lt;p&gt;但是常见功能并不是很多，掌握一些常用的命令，需要时再去查看文档即可。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;GDB 中常用的命令&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;运行 gdb 调试器
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code&gt;$ gcc src.c -o a.out -g&lt;/code&gt;：其中&lt;code&gt;-g&lt;/code&gt;必须加上，不然的话就缺少调试所需要的信息&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;$ gdb a.out&lt;/code&gt;&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;查看源代码
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code&gt;list&lt;/code&gt; ：用于查看当前位置（根据上一次list到哪里来算）起始的10行代码，简写为 &lt;code&gt;l&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;list linenum&lt;/code&gt;：查看指定行之后的10行源代码&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;list function&lt;/code&gt;：用于查看指定函数的源代码&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;断点
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code&gt;break linenum&lt;/code&gt;：在指定的行位置处设一个断点，简写为 &lt;code&gt;b&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;info breakpoints&lt;/code&gt;：查看当前所有断点的信息，其中断点的信息包含&lt;/p&gt;
+
+&lt;p&gt;| Num  | Type | Disp | Enb  | Address | What |
+ | :&amp;ndash;: | :&amp;ndash;: | :&amp;ndash;: | :&amp;ndash;: | :&amp;mdash;&amp;ndash;: | :&amp;ndash;: |
+ |  标号  |  类型  | 显示？  | 使能？  |   地址    |  描述  |&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;info break n&lt;/code&gt;：查看标号为 n 的断点的信息&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;clear&lt;/code&gt;：删除指定 frame 中的所有断点&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;clear location&lt;/code&gt;：删除指定位置的断点&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;disable [range...]&lt;/code&gt;：消除指定范围的断点的效果&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;enable [range...]&lt;/code&gt;：使能指定范围的断点的效果&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;查看变量值
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code&gt;print var&lt;/code&gt;：用于查看指定变量的内容，简写为 &lt;code&gt;p var&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;指定格式的输出格式包括&lt;/p&gt;
+
+&lt;p&gt;| p/? var |   效果   | p/? var |         效果          |
+ | :&amp;mdash;&amp;ndash;: | :&amp;mdash;-: | :&amp;mdash;&amp;ndash;: | :&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;: |
+ |    x    |  十六进制  |    t    |         二进制         |
+ |    d    |  十进制   |    a    |   当做地址，给出其相对函数的偏移   |
+ |    u    | 无符号十进制 |    f    |         浮点数         |
+ |    o    |  八进制   |    s    | 字符串，null terminated |&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;查看内存中的值
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;code&gt;x/nfu addr&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;x addr&lt;/code&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;x&lt;/code&gt;：x 为 &lt;code&gt;examine&lt;/code&gt; 的简写，用于查看指定内存地址中的内容，上述&lt;code&gt;nfu&lt;/code&gt;目的是控制查看的方式。&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;n, f, and u are all optional parameters that specify &lt;em&gt;how much&lt;/em&gt; memory to display and &lt;em&gt;how to format&lt;/em&gt; it; addr is an expression giving the address &lt;em&gt;where&lt;/em&gt; you want to start displaying memory.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;code&gt;n&lt;/code&gt;，表示重复的次数，如果为负值则向前查看&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;f&lt;/code&gt;，指定输出的格式，包括前面print指令中用到的 &lt;code&gt;x d u o t a f s&lt;/code&gt;，效果一样，还有一个 &lt;code&gt;i&lt;/code&gt; 选项，用来输出指令&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;u&lt;/code&gt;，用来指定查看数据的宽度，包括 &lt;code&gt;b h w g&lt;/code&gt; 四种，分别表示字节、2字节、4字节和8字节。&lt;/p&gt;
+
+&lt;p&gt;例如：&lt;code&gt;(gdb) x/5i $pc-6&lt;/code&gt; 就会输出5条指令，&lt;code&gt;=&amp;gt;&lt;/code&gt; 会指明当前&lt;code&gt;$pc&lt;/code&gt;指向的指令&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;查看函数调用栈
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;​&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;​
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;命令测试&lt;/strong&gt;&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;&lt;strong&gt;总结&lt;/strong&gt;&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>断言assert的实现</title>
+      <link>https://zyx-vec.github.io/myblog/post/static-assert/</link>
+      <pubDate>Tue, 11 Oct 2016 15:25:05 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/static-assert/</guid>
+      <description>&lt;p&gt;在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 &lt;code&gt;assert(e)&lt;/code&gt; 中的表达式 &lt;code&gt;e&lt;/code&gt; 的值必须为真 &lt;code&gt;true&lt;/code&gt;，否则的话程序就会 &lt;code&gt;crash&lt;/code&gt; 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 &lt;code&gt;crash&lt;/code&gt; 掉运行的程序是很激进的做法，但也不失为一种拥有的方式。&lt;/p&gt;
+
+&lt;p&gt;本文描述两种 &lt;code&gt;assert&lt;/code&gt; 的实现，一种为 &lt;code&gt;compile time&lt;/code&gt; （编译时），另一种为 &lt;code&gt;runtime&lt;/code&gt; （运行时断言）。&lt;/p&gt;
+
+&lt;p&gt;两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。&lt;code&gt;compile time&lt;/code&gt; 的实现方式就是利用了语言中结构 &lt;code&gt;struct&lt;/code&gt; 中的 &lt;code&gt;bit filed&lt;/code&gt; 必须是大于等于 &lt;code&gt;&amp;gt;= 0&lt;/code&gt; 的，否则就出现编译错误；&lt;code&gt;runtime&lt;/code&gt; 的实现利用了除零的非法操作，如果 &lt;code&gt;assert(e)&lt;/code&gt; 中 &lt;code&gt;e&lt;/code&gt; 为 &lt;code&gt;false&lt;/code&gt;，那么就利用逻辑操作将 &lt;code&gt;false&lt;/code&gt; 转换成 0，利用除零操作进行断言。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;compile time assert&lt;/strong&gt;
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;C&lt;/strong&gt; 中的实现方法，利用 &lt;code&gt;struct&lt;/code&gt; 中的 &lt;code&gt;bit filed&lt;/code&gt; 必须大于等于 0 的特点，其中要用 sizeof 将struct 包裹起来，类似于宏中经常用到的 &lt;code&gt;do { // codes goes here } while(0)&lt;/code&gt;。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  #include &amp;lt;stdio.h&amp;gt;
+  #include &amp;lt;stdlib.h&amp;gt;
+  
+  #define static_assert(e) (sizeof(struct { int : -!(e); }))
+  
+  int main() {
+  	static_assert(13 &amp;gt; 7);
+  	static_assert(13 &amp;lt; 7); // error here, assert failed.
+  	
+  	return 0;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;稍微解释一下：表达式 &lt;code&gt;e&lt;/code&gt; 如果为 &lt;code&gt;false&lt;/code&gt; 那么 &lt;code&gt;!(e)&lt;/code&gt; 就求值为 1，那么 &lt;code&gt;-!(e) == -1&lt;/code&gt;，显然 &lt;code&gt;bit field&lt;/code&gt; 不能为负&lt;code&gt;negative value&lt;/code&gt;，显然这是发生在编译时 &lt;code&gt;compile time&lt;/code&gt; 的检查，所以就实现了编译是 &lt;code&gt;static assert&lt;/code&gt;。&lt;/p&gt;
+
+&lt;p&gt;从下面的运行结果中可以看出，&lt;code&gt;error: negative width in bit-field &#39;&amp;lt;anonymout&amp;gt;&#39;&lt;/code&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  $ gcc .\assert.c
+  .\assert.c: In function &#39;main&#39;:
+  .\assert.c:4:41: error: negative width in bit-field &#39;&amp;lt;anonymous&amp;gt;&#39;
+   #define static_assert(e) (sizeof(struct { int : -!(e); }))
+                                           ^
+  .\assert.c:8:2: note: in expansion of macro &#39;static_assert&#39;
+    static_assert(13 &amp;lt; 7); // error here, assert failed.
+    ^
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;C++&lt;/strong&gt; 中的实现，我们可以从 &lt;code&gt;template&lt;/code&gt; 模板出发，利用特化 &lt;code&gt;specialization&lt;/code&gt; 来实现对 &lt;code&gt;true&lt;/code&gt; 和 &lt;code&gt;false&lt;/code&gt; 的两种不同的处理方式；当求值为 &lt;code&gt;false&lt;/code&gt; 利用语言特性造成编译错误，当求值为 &lt;code&gt;true&lt;/code&gt; 是顺利通过编译即可。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;  #include &amp;lt;iostream&amp;gt;
+  // 声明(declaration)一个结构体，但是没有(definition)
+  template &amp;lt;bool&amp;gt;
+  struct static_assert;
+  // 利用 specialization 来进行当 e 求值为 true 时的特化，definition goes here.
+  template &amp;lt;&amp;gt;
+  struct static_assert&amp;lt;true&amp;gt; { };	// definiation
+  
+  int main() {
+  	static_assert&amp;lt;(13&amp;gt;7)&amp;gt;();	// 13&amp;gt;7 为 true
+  
+  	// static_assert&amp;lt;(13&amp;lt;7)&amp;gt;();	// assert failed here
+  	return 0;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从下面的运行结果中也可以看出当 &lt;code&gt;13&amp;lt;7&lt;/code&gt; 为 &lt;code&gt;false&lt;/code&gt; 时，显示编译错误：&lt;code&gt;incomplete type&lt;/code&gt;。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;  $ g++ .\assert.cpp
+  .\assert.cpp: In function &#39;int main()&#39;:
+  .\assert.cpp:14:24: error: invalid use of incomplete type &#39;struct static_assert&amp;lt;false&amp;gt;&#39;
+    static_assert&amp;lt;(13&amp;lt;7)&amp;gt;();
+                          ^
+  .\assert.cpp:4:8: error: declaration of &#39;struct static_assert&amp;lt;false&amp;gt;&#39;
+   struct static_assert;
+          ^
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;runtime assert&lt;/code&gt;
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;运行时断言 assert 在代码库中有提供，但是我们可以利用一些思路自己编写运行时断言，例如利用除零操作让程序 crash 掉，下面就是给出的示例。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  #include &amp;lt;stdio.h&amp;gt;
+  #include &amp;lt;stdlib.h&amp;gt;
+  
+  #define assert(e) (1/(!!(e)))
+  
+  int main() {
+  	assert(13&amp;lt;7);	// assert failed.
+  	return 0;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;理想状态下该段程序会 crash 掉，但是由于系统的原因，程序并没有断言成功。但这也给我们提供了一种思路。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;总结&lt;/strong&gt;
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;这里主要探讨了编译时和运行时断言的实现，其中给出了C和C++的两种不同的实现；从中也可以看出一些很hack的做法，都是利用一些语言的特性和运行时的特性来做的。此外还可以联想到C++中哑代码的作用，都是利用一些语言编译过程中需要用到的一些语言规则来实现一些编译时的诊断作用；其中现在正在探讨的Concept就是其中之一，利用这些哑代码就可以实现一些这方面的功能。&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
