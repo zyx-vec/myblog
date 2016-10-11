@@ -95,7 +95,7 @@ int main() {
 
 &lt;p&gt;GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒近八百多页！&lt;/p&gt;
 
-&lt;p&gt;官方文档：&lt;a href=&#34;gdb官方文档&#34;&gt;https://www.gnu.org/software/gdb/documentation/&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;官方文档：&lt;a href=&#34;https://www.gnu.org/software/gdb/documentation/&#34;&gt;gdb官方文档&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;但是常见功能并不是很多，掌握一些常用的命令，需要时再去查看文档即可。&lt;/p&gt;
 
