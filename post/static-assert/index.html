@@ -62,7 +62,7 @@
 
 <p>稍微解释一下：表达式 <code>e</code> 如果为 <code>false</code> 那么 <code>!(e)</code> 就求值为 1，那么 <code>-!(e) == -1</code>，显然 <code>bit field</code> 不能为负<code>negative value</code>，显然这是发生在编译时 <code>compile time</code> 的检查，所以就实现了编译是 <code>static assert</code>。</p>
 
-<p>从下面的运行结果中可以看出，<code>error: negative width in bit-field '&lt;anonymout&gt;'</code></p>
+<p>从下面的运行结果中可以看出，<code>error: negative width in bit-field '&lt;anonymous&gt;'</code></p>
 
 <pre><code class="language-c">  $ gcc .\assert.c
   .\assert.c: In function 'main':

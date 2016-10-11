@@ -66,7 +66,12 @@ list linenum：查看指定行之后的10行源代码
 list function：用于查看指定函数的源代码
  断点   break linenum：在指定的行位置处设一个断点，简写为 b
 info breakpoints：查看当前所有断点的信息，其中断点的信息包含
-| Num | Type | Disp | Enb | Address | What | | :&ndash;: | :&ndash;: | :&ndash;: | :&ndash;: | :&mdash;&ndash;: | :&ndash;: | | 标号 | 类型 | 显示？ | 使能？ | 地址 | 描述 |
+info break n：查看标号为 n 的断点的信息
+clear：删除指定 frame 中的所有断点
+clear location：删除指定位置的断点
+disable [range...]：消除指定范围的断点的效果
+enable [range...]：使能指定范围的断点的效果
+ 查看变量值   print var：用于查看指定变量的内容，简写为 p var
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">Read more</a>

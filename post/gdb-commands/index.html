@@ -77,10 +77,6 @@
 
 <p><code>info breakpoints</code>：查看当前所有断点的信息，其中断点的信息包含</p>
 
-<p>| Num  | Type | Disp | Enb  | Address | What |
- | :&ndash;: | :&ndash;: | :&ndash;: | :&ndash;: | :&mdash;&ndash;: | :&ndash;: |
- |  标号  |  类型  | 显示？  | 使能？  |   地址    |  描述  |</p>
-
 <p><code>info break n</code>：查看标号为 n 的断点的信息</p>
 
 <p><code>clear</code>：删除指定 frame 中的所有断点</p>
@@ -99,13 +95,6 @@
 <p><code>print var</code>：用于查看指定变量的内容，简写为 <code>p var</code></p>
 
 <p>指定格式的输出格式包括</p>
-
-<p>| p/? var |   效果   | p/? var |         效果          |
- | :&mdash;&ndash;: | :&mdash;-: | :&mdash;&ndash;: | :&mdash;&mdash;&mdash;&mdash;&mdash;&ndash;: |
- |    x    |  十六进制  |    t    |         二进制         |
- |    d    |  十进制   |    a    |   当做地址，给出其相对函数的偏移   |
- |    u    | 无符号十进制 |    f    |         浮点数         |
- |    o    |  八进制   |    s    | 字符串，null terminated |</p>
 
 <ol>
 <li>查看内存中的值

@@ -131,10 +131,6 @@ int main() {
 
 &lt;p&gt;&lt;code&gt;info breakpoints&lt;/code&gt;：查看当前所有断点的信息，其中断点的信息包含&lt;/p&gt;
 
-&lt;p&gt;| Num  | Type | Disp | Enb  | Address | What |
- | :&amp;ndash;: | :&amp;ndash;: | :&amp;ndash;: | :&amp;ndash;: | :&amp;mdash;&amp;ndash;: | :&amp;ndash;: |
- |  标号  |  类型  | 显示？  | 使能？  |   地址    |  描述  |&lt;/p&gt;
-
 &lt;p&gt;&lt;code&gt;info break n&lt;/code&gt;：查看标号为 n 的断点的信息&lt;/p&gt;
 
 &lt;p&gt;&lt;code&gt;clear&lt;/code&gt;：删除指定 frame 中的所有断点&lt;/p&gt;
@@ -153,13 +149,6 @@ int main() {
 &lt;p&gt;&lt;code&gt;print var&lt;/code&gt;：用于查看指定变量的内容，简写为 &lt;code&gt;p var&lt;/code&gt;&lt;/p&gt;
 
 &lt;p&gt;指定格式的输出格式包括&lt;/p&gt;
-
-&lt;p&gt;| p/? var |   效果   | p/? var |         效果          |
- | :&amp;mdash;&amp;ndash;: | :&amp;mdash;-: | :&amp;mdash;&amp;ndash;: | :&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash;: |
- |    x    |  十六进制  |    t    |         二进制         |
- |    d    |  十进制   |    a    |   当做地址，给出其相对函数的偏移   |
- |    u    | 无符号十进制 |    f    |         浮点数         |
- |    o    |  八进制   |    s    | 字符串，null terminated |&lt;/p&gt;
 
 &lt;ol&gt;
 &lt;li&gt;查看内存中的值
@@ -237,7 +226,7 @@ int main() {
 
 &lt;p&gt;稍微解释一下：表达式 &lt;code&gt;e&lt;/code&gt; 如果为 &lt;code&gt;false&lt;/code&gt; 那么 &lt;code&gt;!(e)&lt;/code&gt; 就求值为 1，那么 &lt;code&gt;-!(e) == -1&lt;/code&gt;，显然 &lt;code&gt;bit field&lt;/code&gt; 不能为负&lt;code&gt;negative value&lt;/code&gt;，显然这是发生在编译时 &lt;code&gt;compile time&lt;/code&gt; 的检查，所以就实现了编译是 &lt;code&gt;static assert&lt;/code&gt;。&lt;/p&gt;
 
-&lt;p&gt;从下面的运行结果中可以看出，&lt;code&gt;error: negative width in bit-field &#39;&amp;lt;anonymout&amp;gt;&#39;&lt;/code&gt;&lt;/p&gt;
+&lt;p&gt;从下面的运行结果中可以看出，&lt;code&gt;error: negative width in bit-field &#39;&amp;lt;anonymous&amp;gt;&#39;&lt;/code&gt;&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  $ gcc .\assert.c
   .\assert.c: In function &#39;main&#39;:
