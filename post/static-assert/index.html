@@ -34,9 +34,9 @@
 
 
       <article>
-        <p>在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 <code>assert(e)</code> 中的表达式 <code>e</code> 的值必须为真 <code>true</code>，否则的话程序就会 <code>crash</code> 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 <code>crash</code> 掉运行的程序是很激进的做法，但也不失为一种拥有的方式。</p>
+        <p>在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 <code>assert(e)</code> 中的表达式 <code>e</code> 的值必须为真 <code>true</code>，否则的话程序就会 <code>crash</code> 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 <code>crash</code> 掉运行的程序是很激进的做法，但也不失为一种有用的方式。</p>
 
-<p>本文描述两种 <code>assert</code> 的实现，一种为 <code>compile time</code> （编译时），另一种为 <code>runtime</code> （运行时断言）。</p>
+<p>本文描述两种 <code>assert</code> 的实现，一种为 <code>compile time</code> （编译时），另一种为 <code>runtime</code> （运行时）。</p>
 
 <p>两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。<code>compile time</code> 的实现方式就是利用了语言中结构 <code>struct</code> 中的 <code>bit filed</code> 必须是大于等于 <code>&gt;= 0</code> 的，否则就出现编译错误；<code>runtime</code> 的实现利用了除零的非法操作，如果 <code>assert(e)</code> 中 <code>e</code> 为 <code>false</code>，那么就利用逻辑操作将 <code>false</code> 转换成 0，利用除零操作进行断言。</p>
 

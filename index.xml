@@ -67,10 +67,10 @@ int main() {
   401411:	89 e5                	mov    %esp,%ebp
   401413:	83 ec 08             	sub    $0x8,%esp
   401416:	8b 45 08             	mov    0x8(%ebp),%eax	// 获得对象的地址
-  401419:	8b 00                	mov    (%eax),%eax		// 取出 vptr
-  40141b:	8b 00                	mov    (%eax),%eax		// 取出 vtable 中的函数指针值
+  401419:	8b 00                	mov    (%eax),%eax	// 取出 vptr
+  40141b:	8b 00                	mov    (%eax),%eax	// 取出 vtable 中的函数指针值
   40141d:	8b 4d 08             	mov    0x8(%ebp),%ecx	// 获得对象地址，作为参数
-  401420:	ff d0                	call   *%eax			// 调用 d-&amp;gt;value()
+  401420:	ff d0                	call   *%eax	// 调用 d-&amp;gt;value()
   401422:	83 c0 0d             	add    $0xd,%eax
   401425:	c9                   	leave  
   401426:	c3                   	ret
@@ -93,9 +93,9 @@ int main() {
 &lt;br /&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒七百多页！&lt;/p&gt;
+&lt;p&gt;GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒近八百多页！&lt;/p&gt;
 
-&lt;p&gt;官方文档：[&lt;a href=&#34;https://www.gnu.org/software/gdb/documentation/](&#34;&gt;https://www.gnu.org/software/gdb/documentation/](&lt;/a&gt;)&lt;/p&gt;
+&lt;p&gt;官方文档：&lt;a href=&#34;gdb官方文档&#34;&gt;https://www.gnu.org/software/gdb/documentation/&lt;/a&gt;&lt;/p&gt;
 
 &lt;p&gt;但是常见功能并不是很多，掌握一些常用的命令，需要时再去查看文档即可。&lt;/p&gt;
 
@@ -198,9 +198,9 @@ int main() {
       <pubDate>Tue, 11 Oct 2016 15:25:05 +0800</pubDate>
       
       <guid>https://zyx-vec.github.io/myblog/post/static-assert/</guid>
-      <description>&lt;p&gt;在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 &lt;code&gt;assert(e)&lt;/code&gt; 中的表达式 &lt;code&gt;e&lt;/code&gt; 的值必须为真 &lt;code&gt;true&lt;/code&gt;，否则的话程序就会 &lt;code&gt;crash&lt;/code&gt; 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 &lt;code&gt;crash&lt;/code&gt; 掉运行的程序是很激进的做法，但也不失为一种拥有的方式。&lt;/p&gt;
+      <description>&lt;p&gt;在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 &lt;code&gt;assert(e)&lt;/code&gt; 中的表达式 &lt;code&gt;e&lt;/code&gt; 的值必须为真 &lt;code&gt;true&lt;/code&gt;，否则的话程序就会 &lt;code&gt;crash&lt;/code&gt; 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 &lt;code&gt;crash&lt;/code&gt; 掉运行的程序是很激进的做法，但也不失为一种有用的方式。&lt;/p&gt;
 
-&lt;p&gt;本文描述两种 &lt;code&gt;assert&lt;/code&gt; 的实现，一种为 &lt;code&gt;compile time&lt;/code&gt; （编译时），另一种为 &lt;code&gt;runtime&lt;/code&gt; （运行时断言）。&lt;/p&gt;
+&lt;p&gt;本文描述两种 &lt;code&gt;assert&lt;/code&gt; 的实现，一种为 &lt;code&gt;compile time&lt;/code&gt; （编译时），另一种为 &lt;code&gt;runtime&lt;/code&gt; （运行时）。&lt;/p&gt;
 
 &lt;p&gt;两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。&lt;code&gt;compile time&lt;/code&gt; 的实现方式就是利用了语言中结构 &lt;code&gt;struct&lt;/code&gt; 中的 &lt;code&gt;bit filed&lt;/code&gt; 必须是大于等于 &lt;code&gt;&amp;gt;= 0&lt;/code&gt; 的，否则就出现编译错误；&lt;code&gt;runtime&lt;/code&gt; 的实现利用了除零的非法操作，如果 &lt;code&gt;assert(e)&lt;/code&gt; 中 &lt;code&gt;e&lt;/code&gt; 为 &lt;code&gt;false&lt;/code&gt;，那么就利用逻辑操作将 &lt;code&gt;false&lt;/code&gt; 转换成 0，利用除零操作进行断言。&lt;/p&gt;
 
