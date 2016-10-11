@@ -11,11 +11,11 @@
   <title>TL;DR BLOG</title>
 
   <meta name="description" content="">
-  <link rel="canonical" href="https://example.com/">
-  <link href="https://example.com/index.xml" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/">
+  <link href="https://zyx-vec.github.io/myblog/index.xml" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
-  <link rel="stylesheet" href="https://example.comcss/highlight.css">
-  <link rel="stylesheet" href="https://example.comcss/paperback.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
 </head>
 
 
@@ -35,7 +35,7 @@
 
         
         <article>
-          <h2><a href="https://example.com/post/devirtualization/">C&#43;&#43;中的devirtualization</a></h2>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/devirtualization/">C&#43;&#43;中的devirtualization</a></h2>
 <div>
   
     我们都知道 C++ 中通过对象中的 vptr 指向 vtable 来实现多态，当然只有指针和引用才能表现出多态，否则的话会发生 slicing，调用构造或者拷贝构造函数，进而重新设置虚表指针 vptr 就不能实现多态。
@@ -44,7 +44,7 @@
 #include &lt;iostream&gt; class Base { public: virtual int value() { return 0; } }; class Derived : public Base { public: int value() final { return 1; }	// final is as an indicator to compiler }; int foo(Derived* d) { return d-&gt;value() + 13; } int main() { Derived d; int i = foo(&amp;d); return 0; }  利用指令 g++ test.
 
     <footer>
-      <a href="https://example.com/post/devirtualization/">Read more</a>
+      <a href="https://zyx-vec.github.io/myblog/post/devirtualization/">Read more</a>
     </footer>
   
 </div>
@@ -52,7 +52,7 @@
         </article>
         
         <article>
-          <h2><a href="https://example.com/post/gdb-commands/">gdb 基本命令</a></h2>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">gdb 基本命令</a></h2>
 <div>
   
     GDB 是什么？   GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒七百多页！
@@ -69,7 +69,7 @@ info breakpoints：查看当前所有断点的信息，其中断点的信息包�
 | Num | Type | Disp | Enb | Address | What | | :&ndash;: | :&ndash;: | :&ndash;: | :&ndash;: | :&mdash;&ndash;: | :&ndash;: | | 标号 | 类型 | 显示？ | 使能？ | 地址 | 描述 |
 
     <footer>
-      <a href="https://example.com/post/gdb-commands/">Read more</a>
+      <a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">Read more</a>
     </footer>
   
 </div>
@@ -77,7 +77,7 @@ info breakpoints：查看当前所有断点的信息，其中断点的信息包�
         </article>
         
         <article>
-          <h2><a href="https://example.com/post/static-assert/">断言assert的实现</a></h2>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/static-assert/">断言assert的实现</a></h2>
 <div>
   
     在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 assert(e) 中的表达式 e 的值必须为真 true，否则的话程序就会 crash 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 crash 掉运行的程序是很激进的做法，但也不失为一种拥有的方式。
@@ -87,7 +87,7 @@ info breakpoints：查看当前所有断点的信息，其中断点的信息包�
 #include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #define static_assert(e) (sizeof(struct { int : -!
 
     <footer>
-      <a href="https://example.com/post/static-assert/">Read more</a>
+      <a href="https://zyx-vec.github.io/myblog/post/static-assert/">Read more</a>
     </footer>
   
 </div>
@@ -98,8 +98,8 @@ info breakpoints：查看当前所有断点的信息，其中断点的信息包�
       </section>
 
       <nav class="site-nav">
-  <a href="https://example.com">Home</a>
-  <a href="https://example.compost/">All posts</a>
+  <a href="https://zyx-vec.github.io/myblog/">Home</a>
+  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
 
   
 
@@ -116,7 +116,7 @@ info breakpoints：查看当前所有断点的信息，其中断点的信息包�
     </div>
 
   
-<script src="https://example.comjs/highlight.pack.js"></script>
+<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
   </body>

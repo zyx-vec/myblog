@@ -2,22 +2,22 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://example.com/</loc>
+    <loc>https://zyx-vec.github.io/myblog/</loc>
     <lastmod>2016-10-11T16:38:44+08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://example.com/post/devirtualization/</loc>
+    <loc>https://zyx-vec.github.io/myblog/post/devirtualization/</loc>
     <lastmod>2016-10-11T16:38:44+08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://example.com/post/gdb-commands/</loc>
+    <loc>https://zyx-vec.github.io/myblog/post/gdb-commands/</loc>
     <lastmod>2016-10-11T16:33:09+08:00</lastmod>
   </url>
   
   <url>
-    <loc>https://example.com/post/static-assert/</loc>
+    <loc>https://zyx-vec.github.io/myblog/post/static-assert/</loc>
     <lastmod>2016-10-11T15:25:05+08:00</lastmod>
   </url>
   

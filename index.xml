@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>TL;DR BLOG</title>
-    <link>https://example.com/index.xml</link>
+    <link>https://zyx-vec.github.io/myblog/index.xml</link>
     <description>Recent content on TL;DR BLOG</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
     <lastBuildDate>Tue, 11 Oct 2016 16:38:44 +0800</lastBuildDate>
-    <atom:link href="https://example.com/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://zyx-vec.github.io/myblog/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>C&#43;&#43;中的devirtualization</title>
-      <link>https://example.com/post/devirtualization/</link>
+      <link>https://zyx-vec.github.io/myblog/post/devirtualization/</link>
       <pubDate>Tue, 11 Oct 2016 16:38:44 +0800</pubDate>
       
-      <guid>https://example.com/post/devirtualization/</guid>
+      <guid>https://zyx-vec.github.io/myblog/post/devirtualization/</guid>
       <description>&lt;p&gt;我们都知道 C++ 中通过对象中的 &lt;code&gt;vptr&lt;/code&gt; 指向 &lt;code&gt;vtable&lt;/code&gt; 来实现多态，当然只有指针和引用才能表现出多态，否则的话会发生 &lt;code&gt;slicing&lt;/code&gt;，调用构造或者拷贝构造函数，进而重新设置虚表指针 vptr 就不能实现多态。&lt;/p&gt;
 
 &lt;p&gt;但 &lt;code&gt;devirtualization&lt;/code&gt; 是什么？解虚拟？从字面中我们也能看出，它表面上是虚函数调用，但实际进行的确是 &lt;code&gt;static&lt;/code&gt; 的调用，也即编译器将虚函数的调用在编译期就进行了决议（&lt;code&gt;resolution&lt;/code&gt;），消除了常规虚函数调用的动作，因为虚函数在运行时调用会经过多次的 &lt;code&gt;indirection&lt;/code&gt; ，性能上会有影响，常规虚函数调用会多出几次内存访问，无论对于指令的条数，还是内存访问中的 &lt;code&gt;Cache&lt;/code&gt; 局部性都会对性能造成一定的影响。较新版的编译器能够通过 C++11 中的关键词来进行指导 &lt;code&gt;devirtualization&lt;/code&gt; ，这个关键词就是 &lt;code&gt;final&lt;/code&gt;，因为虚函数中的 &lt;code&gt;override&lt;/code&gt; 可以通过 &lt;code&gt;final&lt;/code&gt; 来指定终止继续对该虚函数的 &lt;code&gt;override&lt;/code&gt;，所以当传递过来的对象指针调用其所在 &lt;code&gt;scope&lt;/code&gt; 中的虚函数时，碰巧该虚函数有 &lt;code&gt;final&lt;/code&gt; 关键词的修饰，那么编译器就可以&lt;strong&gt;&lt;em&gt;断定&lt;/em&gt;&lt;/strong&gt;其一定是调用该类型指针内部的对应的那个虚函数。&lt;/p&gt;
@@ -84,10 +84,10 @@ int main() {
     
     <item>
       <title>gdb 基本命令</title>
-      <link>https://example.com/post/gdb-commands/</link>
+      <link>https://zyx-vec.github.io/myblog/post/gdb-commands/</link>
       <pubDate>Tue, 11 Oct 2016 16:33:09 +0800</pubDate>
       
-      <guid>https://example.com/post/gdb-commands/</guid>
+      <guid>https://zyx-vec.github.io/myblog/post/gdb-commands/</guid>
       <description>&lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;GDB 是什么？&lt;/strong&gt;
 &lt;br /&gt;&lt;/li&gt;
@@ -205,10 +205,10 @@ int main() {
     
     <item>
       <title>断言assert的实现</title>
-      <link>https://example.com/post/static-assert/</link>
+      <link>https://zyx-vec.github.io/myblog/post/static-assert/</link>
       <pubDate>Tue, 11 Oct 2016 15:25:05 +0800</pubDate>
       
-      <guid>https://example.com/post/static-assert/</guid>
+      <guid>https://zyx-vec.github.io/myblog/post/static-assert/</guid>
       <description>&lt;p&gt;在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 &lt;code&gt;assert(e)&lt;/code&gt; 中的表达式 &lt;code&gt;e&lt;/code&gt; 的值必须为真 &lt;code&gt;true&lt;/code&gt;，否则的话程序就会 &lt;code&gt;crash&lt;/code&gt; 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 &lt;code&gt;crash&lt;/code&gt; 掉运行的程序是很激进的做法，但也不失为一种拥有的方式。&lt;/p&gt;
 
 &lt;p&gt;本文描述两种 &lt;code&gt;assert&lt;/code&gt; 的实现，一种为 &lt;code&gt;compile time&lt;/code&gt; （编译时），另一种为 &lt;code&gt;runtime&lt;/code&gt; （运行时断言）。&lt;/p&gt;
