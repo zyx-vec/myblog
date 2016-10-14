@@ -273,7 +273,9 @@ int main() {
 &lt;br /&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;运行时断言 assert 在代码库中有提供，但是我们可以利用一些思路自己编写运行时断言，例如利用除零操作让程序 crash 掉，下面就是给出的示例。&lt;/p&gt;
+&lt;p&gt;运行是断言相对于编译时断言来说，实现起来就容易很多，可以有很多的做法，只要判断出条件的值之后调用 abort() 即可。当然我还见过有人利用除零操作来实现，这就显得有些画蛇添足，本末倒置了，利用 UB 最终也不会得到什么好的结果！&lt;/p&gt;
+
+&lt;p&gt;利用除零操作（略恶心）让程序 crash 掉，不同的平台可能会有不同的结果，下面就是给出的示例。&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  #include &amp;lt;stdio.h&amp;gt;
   #include &amp;lt;stdlib.h&amp;gt;
@@ -281,12 +283,98 @@ int main() {
   #define assert(e) (1/(!!(e)))
   
   int main() {
-  	assert(13&amp;lt;7);	// assert failed.
+  	assert(13&amp;lt;7);	// assert failed. 不同的平台可能得到不同的结果！
   	return 0;
   }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;理想状态下该段程序会 crash 掉，但是由于系统的原因，程序并没有断言成功。但这也给我们提供了一种思路。&lt;/p&gt;
+&lt;p&gt;理想状态下该段程序会 crash 掉，但是由于系统的原因，程序可能断言不成功。但这也给我们提供了一种思路。&lt;/p&gt;
+
+&lt;p&gt;我们可以查看 GLibc 的实现，其中就是利用 abort 当断言失败是强制退出即可，但是其在断言失败之后会输出很多的相关信息，例如断言失败的所在的行、错误代码和函数名等等，这比我们之前实现的断言的功能更加完善。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  // 定义的空操作宏
+  #define __ASSERT_VOID_CAST(void)
+  #define assert(expr)				\
+  	  ((expr)						\
+  	   ? __ASSERT_VOID_CAST (0)		\
+  	   : __assert_fail (#expr, __FILE__, __LINE__, __ASSERT_FUNCTION))
+  // #expr 	：表达式 expr 对应的字符串
+  // __FILE__ ：断言所在文件的文件名
+  // __LINE__ ：断言所在的行号
+  // __ASSERT__FUNCTION ：发生断言所在函数的函数名，只有在特定环境下才有，否则即为空字符串
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其中的关键是 __assert_fail 函数的实现！下面就来分析分析&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  // assert.h
+  /* This prints an &amp;quot;Assertion failed&amp;quot; message and aborts. */
+  extern void _assert_fail(const char *__assertion,
+                           const char *__file,
+                           unsigned int __line,
+                           const char *__function)
+    __THROW __attribute__((__noreturn__));
+  
+  // assert.c
+  void
+  __assert_fail(const char *assertion, const char *file,
+               unsigned int line, const char *function) {
+    __assert_fail_base(_(&amp;quot;%s%s%s:%u:%s%sAssertion %s failed.\n%n&amp;quot;),
+                      assertion, file, line, function);
+  } // 可以看出其中关键是 __assert_fail_base 的实现。
+  // 上述代码中的 _(&amp;quot;%s%s%s:%u:%s%sAssertion %s failed.\n%n&amp;quot;) 参数，其中 _(args) 是一个 
+  // 宏，用来做修饰用， GLibc 用来翻译用。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从上面的代码框架可以看出 GLibc 中的 assert 的实现就是依靠对断言的表达式e进行求值，如果求到的值为false，就做出激进的行为 - 退出。同时也要注意到 __assert_failed 函数中的参数，上面也给出了介绍。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  void
+  __assert_fail_base (const char *fmt, const char *assertion, const char *file,
+                      unsigned int line, const char *function)
+  {
+    char *str;
+  
+    int total;
+    // __asprintf 函数将收集到的环境信息按照fmt指定的格式输出在堆内存中，然后让 str 指向它。
+    if (__asprintf (&amp;amp;str, fmt,
+                    __progname, __progname[0] ? &amp;quot;: &amp;quot; : &amp;quot;&amp;quot;,
+                    file, line,
+                    function ? function : &amp;quot;&amp;quot;, function ? &amp;quot;: &amp;quot; : &amp;quot;&amp;quot;,
+                    assertion, &amp;amp;total) &amp;gt;= 0)
+      {
+        /* Print the message.  */
+        (void) __fxprintf (NULL, &amp;quot;%s&amp;quot;, str);
+        (void) fflush (stderr);
+  
+        total = (total + 1 + GLRO(dl_pagesize) - 1) &amp;amp; ~(GLRO(dl_pagesize) - 1);
+        struct abort_msg_s *buf = __mmap (NULL, total, PROT_READ | PROT_WRITE,
+                                          MAP_ANON | MAP_PRIVATE, -1, 0);
+        if (__glibc_likely (buf != MAP_FAILED))
+          {
+            buf-&amp;gt;size = total;
+            strcpy (buf-&amp;gt;msg, str);
+  
+            /* We have to free the old buffer since the application might
+               catch the SIGABRT signal.  */
+            struct abort_msg_s *old = atomic_exchange_acq (&amp;amp;__abort_msg, buf);
+  
+            if (old != NULL)
+              __munmap (old, old-&amp;gt;size);
+          }
+  
+        free (str);
+      }
+    else
+      {
+        /* At least print a minimal message.  */
+        static const char errstr[] = &amp;quot;Unexpected error.\n&amp;quot;;
+        __libc_write (STDERR_FILENO, errstr, sizeof (errstr) - 1);
+      }
+  
+    abort ();	// 退出
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从上面也可以看出，GLibc 中 assert 断言的实现比我们想想的更加复杂一下，其中涉及到了一些信息环境的输出，和abort之后所需要的 abort_mag_s 的写入，因为需要进行分析，所以要将为什么 abort 的信息输出到文件中。&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;总结&lt;/strong&gt;
