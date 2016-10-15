@@ -38,7 +38,7 @@
 
 <p>本文描述两种 <code>assert</code> 的实现，一种为 <code>compile time</code> （编译时），另一种为 <code>runtime</code> （运行时）。</p>
 
-<p>两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。<code>compile time</code> 的实现方式就是利用了语言中结构 <code>struct</code> 中的 <code>bit filed</code> 必须是大于等于 <code>&gt;= 0</code> 的，否则就出现编译错误；<code>runtime</code> 的实现利用了除零的非法操作，如果 <code>assert(e)</code> 中 <code>e</code> 为 <code>false</code>，那么就利用逻辑操作将 <code>false</code> 转换成 0，利用除零操作进行断言。</p>
+<p>两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。<code>compile time</code> 的实现方式就是利用了 C 语言中结构 <code>struct</code> 中的 <code>bit filed</code> 必须是大于等于 <code>&gt;= 0</code> 的，否则就出现编译错误，而C++中就利用类型特化来实现，具体看下文；<code>runtime</code> 的实现很常规了，如果 <code>assert(e)</code> 中 <code>e</code> 为 <code>false</code>，那么调用 abort 退出程序即可，当然可以让断言的输出更加详细一些，例如输出所在文件名、行数、函数名和断言失败的表达式的名称等。</p>
 
 <ul>
 <li><strong>compile time assert</strong>
@@ -60,7 +60,7 @@
   }
 </code></pre>
 
-<p>稍微解释一下：表达式 <code>e</code> 如果为 <code>false</code> 那么 <code>!(e)</code> 就求值为 1，那么 <code>-!(e) == -1</code>，显然 <code>bit field</code> 不能为负<code>negative value</code>，显然这是发生在编译时 <code>compile time</code> 的检查，所以就实现了编译是 <code>static assert</code>。</p>
+<p>稍微解释一下：表达式 <code>e</code> 如果为 <code>false</code> 那么 <code>!(e)</code> 就求值为 1，那么 <code>-!(e) == -1</code>，显然 <code>bit field</code> 不能为负<code>negative value</code>，同时这是发生在编译时 <code>compile time</code> 的检查，所以就实现了编译是 <code>static assert</code>。</p>
 
 <p>从下面的运行结果中可以看出，<code>error: negative width in bit-field '&lt;anonymous&gt;'</code></p>
 
@@ -210,7 +210,7 @@
   }
 </code></pre>
 
-<p>从上面也可以看出，GLibc 中 assert 断言的实现比我们想想的更加复杂一下，其中涉及到了一些信息环境的输出，和abort之后所需要的 abort_mag_s 的写入，因为需要进行分析，所以要将为什么 abort 的信息输出到文件中。</p>
+<p>从上面也可以看出，GLibc 中 assert 断言的实现比我们想像的更加复杂一下，其中涉及到了一些信息环境的输出，和abort之后所需要的 abort_mag_s 的写入，因为需要进行分析，所以要将为什么 abort 的信息输出到文件中。</p>
 
 <ul>
 <li><strong>总结</strong>

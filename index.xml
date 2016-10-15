@@ -202,7 +202,7 @@ int main() {
 
 &lt;p&gt;本文描述两种 &lt;code&gt;assert&lt;/code&gt; 的实现，一种为 &lt;code&gt;compile time&lt;/code&gt; （编译时），另一种为 &lt;code&gt;runtime&lt;/code&gt; （运行时）。&lt;/p&gt;
 
-&lt;p&gt;两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。&lt;code&gt;compile time&lt;/code&gt; 的实现方式就是利用了语言中结构 &lt;code&gt;struct&lt;/code&gt; 中的 &lt;code&gt;bit filed&lt;/code&gt; 必须是大于等于 &lt;code&gt;&amp;gt;= 0&lt;/code&gt; 的，否则就出现编译错误；&lt;code&gt;runtime&lt;/code&gt; 的实现利用了除零的非法操作，如果 &lt;code&gt;assert(e)&lt;/code&gt; 中 &lt;code&gt;e&lt;/code&gt; 为 &lt;code&gt;false&lt;/code&gt;，那么就利用逻辑操作将 &lt;code&gt;false&lt;/code&gt; 转换成 0，利用除零操作进行断言。&lt;/p&gt;
+&lt;p&gt;两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。&lt;code&gt;compile time&lt;/code&gt; 的实现方式就是利用了 C 语言中结构 &lt;code&gt;struct&lt;/code&gt; 中的 &lt;code&gt;bit filed&lt;/code&gt; 必须是大于等于 &lt;code&gt;&amp;gt;= 0&lt;/code&gt; 的，否则就出现编译错误，而C++中就利用类型特化来实现，具体看下文；&lt;code&gt;runtime&lt;/code&gt; 的实现很常规了，如果 &lt;code&gt;assert(e)&lt;/code&gt; 中 &lt;code&gt;e&lt;/code&gt; 为 &lt;code&gt;false&lt;/code&gt;，那么调用 abort 退出程序即可，当然可以让断言的输出更加详细一些，例如输出所在文件名、行数、函数名和断言失败的表达式的名称等。&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;compile time assert&lt;/strong&gt;
@@ -224,7 +224,7 @@ int main() {
   }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;稍微解释一下：表达式 &lt;code&gt;e&lt;/code&gt; 如果为 &lt;code&gt;false&lt;/code&gt; 那么 &lt;code&gt;!(e)&lt;/code&gt; 就求值为 1，那么 &lt;code&gt;-!(e) == -1&lt;/code&gt;，显然 &lt;code&gt;bit field&lt;/code&gt; 不能为负&lt;code&gt;negative value&lt;/code&gt;，显然这是发生在编译时 &lt;code&gt;compile time&lt;/code&gt; 的检查，所以就实现了编译是 &lt;code&gt;static assert&lt;/code&gt;。&lt;/p&gt;
+&lt;p&gt;稍微解释一下：表达式 &lt;code&gt;e&lt;/code&gt; 如果为 &lt;code&gt;false&lt;/code&gt; 那么 &lt;code&gt;!(e)&lt;/code&gt; 就求值为 1，那么 &lt;code&gt;-!(e) == -1&lt;/code&gt;，显然 &lt;code&gt;bit field&lt;/code&gt; 不能为负&lt;code&gt;negative value&lt;/code&gt;，同时这是发生在编译时 &lt;code&gt;compile time&lt;/code&gt; 的检查，所以就实现了编译是 &lt;code&gt;static assert&lt;/code&gt;。&lt;/p&gt;
 
 &lt;p&gt;从下面的运行结果中可以看出，&lt;code&gt;error: negative width in bit-field &#39;&amp;lt;anonymous&amp;gt;&#39;&lt;/code&gt;&lt;/p&gt;
 
@@ -374,7 +374,7 @@ int main() {
   }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;从上面也可以看出，GLibc 中 assert 断言的实现比我们想想的更加复杂一下，其中涉及到了一些信息环境的输出，和abort之后所需要的 abort_mag_s 的写入，因为需要进行分析，所以要将为什么 abort 的信息输出到文件中。&lt;/p&gt;
+&lt;p&gt;从上面也可以看出，GLibc 中 assert 断言的实现比我们想像的更加复杂一下，其中涉及到了一些信息环境的输出，和abort之后所需要的 abort_mag_s 的写入，因为需要进行分析，所以要将为什么 abort 的信息输出到文件中。&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;总结&lt;/strong&gt;
