@@ -35,6 +35,25 @@
 
         
         <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/is_constructible/">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</a></h2>
+<div>
+  
+    is_convertible和 is_constructible是否等价
+C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当让目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。
+is_convertible 和 is_constructible 就是 type_traits 中的两个 meta function；光听名字感觉他们两者应该功能是一样的；注意两 meta function 之间参数的顺序，如标题所示，当 T 从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的，这就是 C++ 的“神奇”之处，细节性的东西太多了！
+将上面这段话转换成代码，就是
+T t(u);	// OK T t = u; // ???  可以通过代码来测试，代码如下
+#include &lt;iostream&gt; #include &lt;type_traits&gt; // is_constructible&lt;T, U&gt;::value // is_convertible&lt;U, T&gt;::value struct Foo { explicit Foo(int data) : data(data) {} int data; }; int main() { std::cout &lt;&lt; std::is_convertible&lt;int, Foo&gt;::value &lt;&lt; std::endl; std::cout &lt;&lt; std::is_constructible&lt;Foo, int&gt;::value &lt;&lt; std::endl; return 0; }  从上述代码中也可以发现端倪，其中类型 Foo 中定义的构造函数是 explicit 的，所以根据 C++ 中 explicit 关键词的用意，int 是不能（隐式）转换成 Foo 的，但是 int 却可以用来构造 Foo，那么最终的结果也就很明显了；用命令 g++ test.
+
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/is_constructible/">Read more</a>
+    </footer>
+  
+</div>
+
+        </article>
+        
+        <article>
           <h2><a href="https://zyx-vec.github.io/myblog/post/devirtualization/">C&#43;&#43;中的devirtualization</a></h2>
 <div>
   
@@ -75,24 +94,6 @@ enable [range...]：使能指定范围的断点的效果
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">Read more</a>
-    </footer>
-  
-</div>
-
-        </article>
-        
-        <article>
-          <h2><a href="https://zyx-vec.github.io/myblog/post/static-assert/">断言assert的实现</a></h2>
-<div>
-  
-    在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 assert(e) 中的表达式 e 的值必须为真 true，否则的话程序就会 crash 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 crash 掉运行的程序是很激进的做法，但也不失为一种有用的方式。
-本文描述两种 assert 的实现，一种为 compile time （编译时），另一种为 runtime （运行时）。
-两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。compile time 的实现方式就是利用了 C 语言中结构 struct 中的 bit filed 必须是大于等于 &gt;= 0 的，否则就出现编译错误，而C++中就利用类型特化来实现，具体看下文；runtime 的实现很常规了，如果 assert(e) 中 e 为 false，那么调用 abort 退出程序即可，当然可以让断言的输出更加详细一些，例如输出所在文件名、行数、函数名和断言失败的表达式的名称等。
- compile time assert   C 中的实现方法，利用 struct 中的 bit filed 必须大于等于 0 的特点，其中要用 sizeof 将struct 包裹起来，类似于宏中经常用到的 do { // codes goes here } while(0)。
-#include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #define static_assert(e) (sizeof(struct { int : -!
-
-    <footer>
-      <a href="https://zyx-vec.github.io/myblog/post/static-assert/">Read more</a>
     </footer>
   
 </div>

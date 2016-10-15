@@ -6,8 +6,65 @@
     <description>Recent content on TL;DR BLOG</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Tue, 11 Oct 2016 16:38:44 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 15 Oct 2016 23:02:11 +0800</lastBuildDate>
     <atom:link href="https://zyx-vec.github.io/myblog/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</title>
+      <link>https://zyx-vec.github.io/myblog/post/is_constructible/</link>
+      <pubDate>Sat, 15 Oct 2016 23:02:11 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/is_constructible/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt; 是否等价&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当让目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。&lt;/p&gt;
+
+&lt;p&gt;&lt;code&gt;is_convertible&lt;/code&gt; 和 &lt;code&gt;is_constructible&lt;/code&gt; 就是 &lt;code&gt;type_traits&lt;/code&gt; 中的两个 &lt;code&gt;meta function&lt;/code&gt;；光听名字感觉他们两者应该功能是一样的；注意两 &lt;code&gt;meta function&lt;/code&gt; 之间参数的顺序，如标题所示，当 T 从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的，这就是 C++ 的“神奇”之处，细节性的东西太多了！&lt;/p&gt;
+
+&lt;p&gt;将上面这段话转换成代码，就是&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;T t(u);		// OK
+T t = u; 	// ???
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以通过代码来测试，代码如下&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;#include &amp;lt;iostream&amp;gt;
+#include &amp;lt;type_traits&amp;gt;
+
+// is_constructible&amp;lt;T, U&amp;gt;::value
+// is_convertible&amp;lt;U, T&amp;gt;::value
+
+struct Foo {
+	explicit Foo(int data) : data(data) {}
+	int data;
+};
+
+int main() {
+
+	std::cout &amp;lt;&amp;lt; std::is_convertible&amp;lt;int, Foo&amp;gt;::value &amp;lt;&amp;lt; std::endl;
+
+	std::cout &amp;lt;&amp;lt; std::is_constructible&amp;lt;Foo, int&amp;gt;::value &amp;lt;&amp;lt; std::endl;
+
+	return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从上述代码中也可以发现端倪，其中类型 Foo 中定义的构造函数是 &lt;code&gt;explicit&lt;/code&gt; 的，所以根据 C++ 中 explicit 关键词的用意，int 是不能（隐式）转换成 Foo 的，但是 int 却可以用来构造 Foo，那么最终的结果也就很明显了；用命令 &lt;code&gt;g++ test.cpp -std=c++11&lt;/code&gt; 编译得到可执行程序，运行之，如下所示&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;$ ./a.out
+0
+1
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;总结
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;从上述的分析可知，&lt;code&gt;is_constructible&lt;/code&gt; 和 &lt;code&gt;is_convertible&lt;/code&gt; 之间是有区别的，其中关键词 &lt;code&gt;explicit&lt;/code&gt; 就将这种区别表现出来了。因为 &lt;code&gt;is_convertible&lt;/code&gt; 涉及到了隐式转换，但是 &lt;code&gt;explicit&lt;/code&gt; 却阻止了这种隐式转化你的存在，所以就表现出了和 &lt;code&gt;is_constructible&lt;/code&gt; 不同的结果。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>C&#43;&#43;中的devirtualization</title>
