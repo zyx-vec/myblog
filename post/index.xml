@@ -30,7 +30,16 @@ T t = u;	// OK
 T t(u);		// ???
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;按照常识，&lt;code&gt;T t(u)&lt;/code&gt; 应该比 &lt;code&gt;T t = u&lt;/code&gt; 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以是 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！&lt;/p&gt;
+&lt;p&gt;按照常识，&lt;code&gt;T t(u)&lt;/code&gt; 应该比 &lt;code&gt;T t = u&lt;/code&gt; 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以调用 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;explicit 关键词的作用.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;A constructor declared without the function-specifier explicit specifies a conversion from the types of its parameters to the type of its class. Such a constructor is called a &lt;em&gt;converting constructor&lt;/em&gt;.  （即：Foo f = 1 ==&amp;gt; Foo f(1) 发生隐式转换）。&lt;/li&gt;
+&lt;li&gt;An explicit constructor constructs objects just like non-explicit constructors, &lt;em&gt;but does so only where the direct-initialization syntax (8.5) or where casts (5.2.9, 5.4) are explicitly used.&lt;/em&gt; A default constructor may be an explicit constructor; such a constructor will be used to perform default-initialization or value initialization (8.5).  不能发生1中的自动转换。&lt;/li&gt;
+&lt;/ol&gt;
+&lt;/blockquote&gt;
 
 &lt;p&gt;可以通过代码来看一下“常理”之中的情况，代码如下&lt;/p&gt;
 
@@ -47,14 +56,13 @@ struct Foo {
 
 int main() {
   std::cout &amp;lt;&amp;lt; std::is_convertible&amp;lt;int, Foo&amp;gt;::value &amp;lt;&amp;lt; std::endl;
-  
   std::cout &amp;lt;&amp;lt; std::is_constructible&amp;lt;Foo, int&amp;gt;::value &amp;lt;&amp;lt; std::endl;
-  
+
   return 0;
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;从上述代码中也可以发现端倪，其中类型 Foo 中定义的构造函数是 &lt;code&gt;explicit&lt;/code&gt; 的，所以根据 C++ 中 explicit 关键词的用意，int 是不能（隐式）转换成 Foo 的，但是 int 却可以用来构造 Foo，那么最终的结果也就很明显了；用命令 &lt;code&gt;g++ test.cpp -std=c++11&lt;/code&gt; 编译得到可执行程序，运行之，如下所示&lt;/p&gt;
+&lt;p&gt;从上述代码中也可以发现端倪，其中类型 Foo 中定义的构造函数是 &lt;code&gt;explicit&lt;/code&gt; 的，所以根据 C++ 中 explicit 关键词的作用中的（1），int_val &lt;u&gt;不能&lt;/u&gt;（*隐式*）转换成 Foo(int_val) ，但是 int 却&lt;u&gt;可以&lt;/u&gt;用来&lt;em&gt;直接构造&lt;/em&gt; Foo，那么最终的结果也就很明显了；用命令 &lt;code&gt;g++ test.cpp -std=c++11&lt;/code&gt; 编译得到可执行程序，运行之，如下所示&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;$ ./a.out
 0
@@ -82,15 +90,15 @@ private:
 int main() {
   std::cout &amp;lt;&amp;lt; std::is_convertible&amp;lt;double, Test&amp;gt;::value &amp;lt;&amp;lt; std::endl;
   std::cout &amp;lt;&amp;lt; std::is_constructible&amp;lt;Test, double&amp;gt;::value &amp;lt;&amp;lt; std::endl;
-  
+
   Test t = 1.0;  // OK
   Test t1(1.0);  // Error
-  
+
   return 0;
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;如上代码所示，将类型 Test 的一个构造函数声明成 &lt;code&gt;private&lt;/code&gt; 同时用 &lt;code&gt;explicit&lt;/code&gt; 修饰。同时应当注意，重载决议(&lt;code&gt;Overload resolution&lt;/code&gt;)是发生在访问控制权限检查(&lt;code&gt;Access checking&lt;/code&gt;)之前的！所以对于 &lt;code&gt;Test t = 1.0&lt;/code&gt;来说重载决议将首先发生从 double 到 int 的隐式转换，然后选择 &lt;code&gt;Test(int)&lt;/code&gt; 构造函数；其中因为 &lt;code&gt;Test(double)&lt;/code&gt; 是 &lt;code&gt;explicit&lt;/code&gt; 的，所以会&lt;strong&gt;被排除&lt;/strong&gt;，根本就不让 double 隐式构造发生。而 Test t1(1.0) 就不一样了，首先发生重载决议，&lt;strong&gt;选定&lt;/strong&gt; &lt;code&gt;explicit Test(double)&lt;/code&gt;，选定之后进行访问权限检查，发现是 private 的，故报错，所以构造失败。&lt;/p&gt;
+&lt;p&gt;如上代码所示，将类型 Test 的一个构造函数（参数为double）声明成 &lt;code&gt;private&lt;/code&gt; 同时用 &lt;code&gt;explicit&lt;/code&gt; 修饰。同时应当注意，重载决议(&lt;code&gt;Overload resolution&lt;/code&gt;)发生在访问控制权限检查(&lt;code&gt;Access checking&lt;/code&gt;)之前！所以对于 &lt;code&gt;Test t = 1.0&lt;/code&gt;来说重载决议将首先发生从 double 到 int 的隐式转换，然后选择 &lt;code&gt;Test(int)&lt;/code&gt; 构造函数；其中关键因为 &lt;code&gt;Test(double)&lt;/code&gt; 是 &lt;code&gt;explicit&lt;/code&gt; 的，根本就不让 &lt;code&gt;double&lt;/code&gt; 隐式转换构造（*Test t = 1.0 转成 Test t(1.0)*）发生，所以会&lt;strong&gt;被排除&lt;/strong&gt;掉。而 &lt;code&gt;Test t1(1.0)&lt;/code&gt; 就不一样了，首先发生重载决议，&lt;strong&gt;选定&lt;/strong&gt; &lt;code&gt;explicit Test(double)&lt;/code&gt;，选定之后进行访问权限检查，发现是 &lt;code&gt;private&lt;/code&gt; 的，故报错，所以构造失败。&lt;/p&gt;
 
 &lt;p&gt;所以究其原因，是 explicit 改变了 type interface 的意义。它使重载决议发生不同的选择。&lt;/p&gt;
 

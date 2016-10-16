@@ -42,7 +42,7 @@
 C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。
 is_convertible 和 is_constructible 就是 type_traits 中的两个 meta function；光听名字感觉他们两者应该功能应该是差不多的，确实，但是本文探讨的是两者的区别，和 type interface 的主要问题；注意两 meta function 之间参数的顺序，如标题所示，当 T 能从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的；反过来呢？答案也是否定的。这就是 C++ 的“神奇”之处，细节性的东西太多了！
 将上面这段话转换成代码，就是
-T t(u);	// OK T t = u; // ??? T t = u;	// OK T t(u);	// ???  按照常识，T t(u) 应该比 T t = u 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以是 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！
+T t(u);	// OK T t = u; // ??? T t = u;	// OK T t(u);	// ???  按照常识，T t(u) 应该比 T t = u 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以调用 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/is_constructible/">Read more</a>
