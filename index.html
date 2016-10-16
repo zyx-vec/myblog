@@ -39,11 +39,10 @@
 <div>
   
     is_convertible和 is_constructible是否等价
-C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当让目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。
-is_convertible 和 is_constructible 就是 type_traits 中的两个 meta function；光听名字感觉他们两者应该功能是一样的；注意两 meta function 之间参数的顺序，如标题所示，当 T 从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的，这就是 C++ 的“神奇”之处，细节性的东西太多了！
+C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。
+is_convertible 和 is_constructible 就是 type_traits 中的两个 meta function；光听名字感觉他们两者应该功能应该是差不多的，确实，但是本文探讨的是两者的区别，和 type interface 的主要问题；注意两 meta function 之间参数的顺序，如标题所示，当 T 能从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的；反过来呢？答案也是否定的。这就是 C++ 的“神奇”之处，细节性的东西太多了！
 将上面这段话转换成代码，就是
-T t(u);	// OK T t = u; // ???  可以通过代码来测试，代码如下
-#include &lt;iostream&gt; #include &lt;type_traits&gt; // is_constructible&lt;T, U&gt;::value // is_convertible&lt;U, T&gt;::value struct Foo { explicit Foo(int data) : data(data) {} int data; }; int main() { std::cout &lt;&lt; std::is_convertible&lt;int, Foo&gt;::value &lt;&lt; std::endl; std::cout &lt;&lt; std::is_constructible&lt;Foo, int&gt;::value &lt;&lt; std::endl; return 0; }  从上述代码中也可以发现端倪，其中类型 Foo 中定义的构造函数是 explicit 的，所以根据 C++ 中 explicit 关键词的用意，int 是不能（隐式）转换成 Foo 的，但是 int 却可以用来构造 Foo，那么最终的结果也就很明显了；用命令 g++ test.
+T t(u);	// OK T t = u; // ??? T t = u;	// OK T t(u);	// ???  按照常识，T t(u) 应该比 T t = u 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以是 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/is_constructible/">Read more</a>

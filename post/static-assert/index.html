@@ -53,10 +53,10 @@
   #define static_assert(e) (sizeof(struct { int : -!(e); }))
   
   int main() {
-  	static_assert(13 &gt; 7);
-  	static_assert(13 &lt; 7); // error here, assert failed.
-  	
-  	return 0;
+    static_assert(13 &gt; 7);
+    static_assert(13 &lt; 7); // error here, assert failed.
+    
+    return 0;
   }
 </code></pre>
 
@@ -85,10 +85,10 @@
   struct static_assert&lt;true&gt; { };	// definiation
   
   int main() {
-  	static_assert&lt;(13&gt;7)&gt;();	// 13&gt;7 为 true
-  
-  	// static_assert&lt;(13&lt;7)&gt;();	// assert failed here
-  	return 0;
+    static_assert&lt;(13&gt;7)&gt;();	// 13&gt;7 为 true
+    static_assert&lt;(13&lt;7)&gt;();	// assert failed here
+    
+    return 0;
   }
 </code></pre>
 
@@ -119,8 +119,8 @@
   #define assert(e) (1/(!!(e)))
   
   int main() {
-  	assert(13&lt;7);	// assert failed. 不同的平台可能得到不同的结果！
-  	return 0;
+    assert(13&lt;7);	// assert failed. 不同的平台可能得到不同的结果！
+    return 0;
   }
 </code></pre>
 

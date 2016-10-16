@@ -36,17 +36,22 @@
       <article>
         <p><strong>is_convertible<U, T> 和 is_constructible<T, U> 是否等价</strong></p>
 
-<p>C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当让目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。</p>
+<p>C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。</p>
 
-<p><code>is_convertible</code> 和 <code>is_constructible</code> 就是 <code>type_traits</code> 中的两个 <code>meta function</code>；光听名字感觉他们两者应该功能是一样的；注意两 <code>meta function</code> 之间参数的顺序，如标题所示，当 T 从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的，这就是 C++ 的“神奇”之处，细节性的东西太多了！</p>
+<p><code>is_convertible</code> 和 <code>is_constructible</code> 就是 <code>type_traits</code> 中的两个 <code>meta function</code>；光听名字感觉他们两者应该功能应该是差不多的，确实，但是本文探讨的是两者的区别，和 <code>type interface</code> 的主要问题；注意两 <code>meta function</code> 之间参数的顺序，如标题所示，当 T 能从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的；反过来呢？答案也是否定的。这就是 C++ 的“神奇”之处，细节性的东西太多了！</p>
 
 <p>将上面这段话转换成代码，就是</p>
 
 <pre><code class="language-c++">T t(u);		// OK
 T t = u; 	// ???
+
+T t = u;	// OK
+T t(u);		// ???
 </code></pre>
 
-<p>可以通过代码来测试，代码如下</p>
+<p>按照常识，<code>T t(u)</code> 应该比 <code>T t = u</code> 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以是 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！</p>
+
+<p>可以通过代码来看一下“常理”之中的情况，代码如下</p>
 
 <pre><code class="language-c++">#include &lt;iostream&gt;
 #include &lt;type_traits&gt;
@@ -55,17 +60,16 @@ T t = u; 	// ???
 // is_convertible&lt;U, T&gt;::value
 
 struct Foo {
-	explicit Foo(int data) : data(data) {}
-	int data;
+  explicit Foo(int data) : data(data) {}
+  int data;
 };
 
 int main() {
-
-	std::cout &lt;&lt; std::is_convertible&lt;int, Foo&gt;::value &lt;&lt; std::endl;
-
-	std::cout &lt;&lt; std::is_constructible&lt;Foo, int&gt;::value &lt;&lt; std::endl;
-
-	return 0;
+  std::cout &lt;&lt; std::is_convertible&lt;int, Foo&gt;::value &lt;&lt; std::endl;
+  
+  std::cout &lt;&lt; std::is_constructible&lt;Foo, int&gt;::value &lt;&lt; std::endl;
+  
+  return 0;
 }
 </code></pre>
 
@@ -76,12 +80,45 @@ int main() {
 1
 </code></pre>
 
+<p>现考虑如下代码，这才是真正坑的地方，会出现怎样的情况呢？</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;type_traits&gt;
+
+// is_constructible&lt;T, U&gt;::value
+// is_convertible&lt;U, T&gt;::value
+
+// T v = u; works
+// T v(u);	???
+
+struct Test {
+  int data;
+  Test(int data) : data(data) {}
+private:
+  explicit Test(double);  // explicit 是关键！
+};
+
+int main() {
+  std::cout &lt;&lt; std::is_convertible&lt;double, Test&gt;::value &lt;&lt; std::endl;
+  std::cout &lt;&lt; std::is_constructible&lt;Test, double&gt;::value &lt;&lt; std::endl;
+  
+  Test t = 1.0;  // OK
+  Test t1(1.0);  // Error
+  
+  return 0;
+}
+</code></pre>
+
+<p>如上代码所示，将类型 Test 的一个构造函数声明成 <code>private</code> 同时用 <code>explicit</code> 修饰。同时应当注意，重载决议(<code>Overload resolution</code>)是发生在访问控制权限检查(<code>Access checking</code>)之前的！所以对于 <code>Test t = 1.0</code>来说重载决议将首先发生从 double 到 int 的隐式转换，然后选择 <code>Test(int)</code> 构造函数；其中因为 <code>Test(double)</code> 是 <code>explicit</code> 的，所以会<strong>被排除</strong>，根本就不让 double 隐式构造发生。而 Test t1(1.0) 就不一样了，首先发生重载决议，<strong>选定</strong> <code>explicit Test(double)</code>，选定之后进行访问权限检查，发现是 private 的，故报错，所以构造失败。</p>
+
+<p>所以究其原因，是 explicit 改变了 type interface 的意义。它使重载决议发生不同的选择。</p>
+
 <ul>
 <li>总结
 <br /></li>
 </ul>
 
-<p>从上述的分析可知，<code>is_constructible</code> 和 <code>is_convertible</code> 之间是有区别的，其中关键词 <code>explicit</code> 就将这种区别表现出来了。因为 <code>is_convertible</code> 涉及到了隐式转换，但是 <code>explicit</code> 却阻止了这种隐式转化你的存在，所以就表现出了和 <code>is_constructible</code> 不同的结果。</p>
+<p>从上述的分析可知，<code>is_constructible</code> 和 <code>is_convertible</code> 之间是有区别的，其中关键词 <code>explicit</code> 就将这种区别表现出来了。因为 <code>is_convertible</code> 可能涉及到隐式转换，但是 <code>explicit</code> 却阻止了这种隐式转化你的存在，改变重载决议的选择，所以就表现出了和 <code>is_constructible</code> 不同的结果。</p>
 
       </article>
 

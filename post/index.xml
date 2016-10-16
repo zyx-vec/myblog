@@ -17,17 +17,22 @@
       <guid>https://zyx-vec.github.io/myblog/post/is_constructible/</guid>
       <description>&lt;p&gt;&lt;strong&gt;is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt; 是否等价&lt;/strong&gt;&lt;/p&gt;
 
-&lt;p&gt;C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当让目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。&lt;/p&gt;
+&lt;p&gt;C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。&lt;/p&gt;
 
-&lt;p&gt;&lt;code&gt;is_convertible&lt;/code&gt; 和 &lt;code&gt;is_constructible&lt;/code&gt; 就是 &lt;code&gt;type_traits&lt;/code&gt; 中的两个 &lt;code&gt;meta function&lt;/code&gt;；光听名字感觉他们两者应该功能是一样的；注意两 &lt;code&gt;meta function&lt;/code&gt; 之间参数的顺序，如标题所示，当 T 从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的，这就是 C++ 的“神奇”之处，细节性的东西太多了！&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;is_convertible&lt;/code&gt; 和 &lt;code&gt;is_constructible&lt;/code&gt; 就是 &lt;code&gt;type_traits&lt;/code&gt; 中的两个 &lt;code&gt;meta function&lt;/code&gt;；光听名字感觉他们两者应该功能应该是差不多的，确实，但是本文探讨的是两者的区别，和 &lt;code&gt;type interface&lt;/code&gt; 的主要问题；注意两 &lt;code&gt;meta function&lt;/code&gt; 之间参数的顺序，如标题所示，当 T 能从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的；反过来呢？答案也是否定的。这就是 C++ 的“神奇”之处，细节性的东西太多了！&lt;/p&gt;
 
 &lt;p&gt;将上面这段话转换成代码，就是&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;T t(u);		// OK
 T t = u; 	// ???
+
+T t = u;	// OK
+T t(u);		// ???
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;可以通过代码来测试，代码如下&lt;/p&gt;
+&lt;p&gt;按照常识，&lt;code&gt;T t(u)&lt;/code&gt; 应该比 &lt;code&gt;T t = u&lt;/code&gt; 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以是 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！&lt;/p&gt;
+
+&lt;p&gt;可以通过代码来看一下“常理”之中的情况，代码如下&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;#include &amp;lt;iostream&amp;gt;
 #include &amp;lt;type_traits&amp;gt;
@@ -36,17 +41,16 @@ T t = u; 	// ???
 // is_convertible&amp;lt;U, T&amp;gt;::value
 
 struct Foo {
-	explicit Foo(int data) : data(data) {}
-	int data;
+  explicit Foo(int data) : data(data) {}
+  int data;
 };
 
 int main() {
-
-	std::cout &amp;lt;&amp;lt; std::is_convertible&amp;lt;int, Foo&amp;gt;::value &amp;lt;&amp;lt; std::endl;
-
-	std::cout &amp;lt;&amp;lt; std::is_constructible&amp;lt;Foo, int&amp;gt;::value &amp;lt;&amp;lt; std::endl;
-
-	return 0;
+  std::cout &amp;lt;&amp;lt; std::is_convertible&amp;lt;int, Foo&amp;gt;::value &amp;lt;&amp;lt; std::endl;
+  
+  std::cout &amp;lt;&amp;lt; std::is_constructible&amp;lt;Foo, int&amp;gt;::value &amp;lt;&amp;lt; std::endl;
+  
+  return 0;
 }
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -57,12 +61,45 @@ int main() {
 1
 &lt;/code&gt;&lt;/pre&gt;
 
+&lt;p&gt;现考虑如下代码，这才是真正坑的地方，会出现怎样的情况呢？&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;#include &amp;lt;iostream&amp;gt;
+#include &amp;lt;type_traits&amp;gt;
+
+// is_constructible&amp;lt;T, U&amp;gt;::value
+// is_convertible&amp;lt;U, T&amp;gt;::value
+
+// T v = u; works
+// T v(u);	???
+
+struct Test {
+  int data;
+  Test(int data) : data(data) {}
+private:
+  explicit Test(double);  // explicit 是关键！
+};
+
+int main() {
+  std::cout &amp;lt;&amp;lt; std::is_convertible&amp;lt;double, Test&amp;gt;::value &amp;lt;&amp;lt; std::endl;
+  std::cout &amp;lt;&amp;lt; std::is_constructible&amp;lt;Test, double&amp;gt;::value &amp;lt;&amp;lt; std::endl;
+  
+  Test t = 1.0;  // OK
+  Test t1(1.0);  // Error
+  
+  return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;如上代码所示，将类型 Test 的一个构造函数声明成 &lt;code&gt;private&lt;/code&gt; 同时用 &lt;code&gt;explicit&lt;/code&gt; 修饰。同时应当注意，重载决议(&lt;code&gt;Overload resolution&lt;/code&gt;)是发生在访问控制权限检查(&lt;code&gt;Access checking&lt;/code&gt;)之前的！所以对于 &lt;code&gt;Test t = 1.0&lt;/code&gt;来说重载决议将首先发生从 double 到 int 的隐式转换，然后选择 &lt;code&gt;Test(int)&lt;/code&gt; 构造函数；其中因为 &lt;code&gt;Test(double)&lt;/code&gt; 是 &lt;code&gt;explicit&lt;/code&gt; 的，所以会&lt;strong&gt;被排除&lt;/strong&gt;，根本就不让 double 隐式构造发生。而 Test t1(1.0) 就不一样了，首先发生重载决议，&lt;strong&gt;选定&lt;/strong&gt; &lt;code&gt;explicit Test(double)&lt;/code&gt;，选定之后进行访问权限检查，发现是 private 的，故报错，所以构造失败。&lt;/p&gt;
+
+&lt;p&gt;所以究其原因，是 explicit 改变了 type interface 的意义。它使重载决议发生不同的选择。&lt;/p&gt;
+
 &lt;ul&gt;
 &lt;li&gt;总结
 &lt;br /&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;p&gt;从上述的分析可知，&lt;code&gt;is_constructible&lt;/code&gt; 和 &lt;code&gt;is_convertible&lt;/code&gt; 之间是有区别的，其中关键词 &lt;code&gt;explicit&lt;/code&gt; 就将这种区别表现出来了。因为 &lt;code&gt;is_convertible&lt;/code&gt; 涉及到了隐式转换，但是 &lt;code&gt;explicit&lt;/code&gt; 却阻止了这种隐式转化你的存在，所以就表现出了和 &lt;code&gt;is_constructible&lt;/code&gt; 不同的结果。&lt;/p&gt;
+&lt;p&gt;从上述的分析可知，&lt;code&gt;is_constructible&lt;/code&gt; 和 &lt;code&gt;is_convertible&lt;/code&gt; 之间是有区别的，其中关键词 &lt;code&gt;explicit&lt;/code&gt; 就将这种区别表现出来了。因为 &lt;code&gt;is_convertible&lt;/code&gt; 可能涉及到隐式转换，但是 &lt;code&gt;explicit&lt;/code&gt; 却阻止了这种隐式转化你的存在，改变重载决议的选择，所以就表现出了和 &lt;code&gt;is_constructible&lt;/code&gt; 不同的结果。&lt;/p&gt;
 </description>
     </item>
     
@@ -82,22 +119,22 @@ int main() {
 
 class Base {
 public:
-	virtual int value() { return 0; }
+  virtual int value() { return 0; }
 };
 
 class Derived : public Base {
 public:
-	int value() final { return 1; }	// final is as an indicator to compiler
+  int value() final { return 1; }	// final is as an indicator to compiler
 };
 
 int foo(Derived* d) {
-	return d-&amp;gt;value() + 13;
+  return d-&amp;gt;value() + 13;
 }
 
 int main() {
-	Derived d;
-	int i = foo(&amp;amp;d);
-	return 0;
+  Derived d;
+  int i = foo(&amp;amp;d);
+  return 0;
 }
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -123,11 +160,11 @@ int main() {
   401410:	55                   	push   %ebp
   401411:	89 e5                	mov    %esp,%ebp
   401413:	83 ec 08             	sub    $0x8,%esp
-  401416:	8b 45 08             	mov    0x8(%ebp),%eax	// 获得对象的地址
-  401419:	8b 00                	mov    (%eax),%eax	// 取出 vptr
-  40141b:	8b 00                	mov    (%eax),%eax	// 取出 vtable 中的函数指针值
-  40141d:	8b 4d 08             	mov    0x8(%ebp),%ecx	// 获得对象地址，作为参数
-  401420:	ff d0                	call   *%eax	// 调用 d-&amp;gt;value()
+  401416:	8b 45 08             	mov    0x8(%ebp),%eax  // 获得对象的地址
+  401419:	8b 00                	mov    (%eax),%eax     // 取出 vptr
+  40141b:	8b 00                	mov    (%eax),%eax     // 取出 vtable 中的函数指针值
+  40141d:	8b 4d 08             	mov    0x8(%ebp),%ecx  // 获得对象地址，作为参数
+  401420:	ff d0                	call   *%eax           // 调用 d-&amp;gt;value()
   401422:	83 c0 0d             	add    $0xd,%eax
   401425:	c9                   	leave  
   401426:	c3                   	ret
@@ -274,10 +311,10 @@ int main() {
   #define static_assert(e) (sizeof(struct { int : -!(e); }))
   
   int main() {
-  	static_assert(13 &amp;gt; 7);
-  	static_assert(13 &amp;lt; 7); // error here, assert failed.
-  	
-  	return 0;
+    static_assert(13 &amp;gt; 7);
+    static_assert(13 &amp;lt; 7); // error here, assert failed.
+    
+    return 0;
   }
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -306,10 +343,10 @@ int main() {
   struct static_assert&amp;lt;true&amp;gt; { };	// definiation
   
   int main() {
-  	static_assert&amp;lt;(13&amp;gt;7)&amp;gt;();	// 13&amp;gt;7 为 true
-  
-  	// static_assert&amp;lt;(13&amp;lt;7)&amp;gt;();	// assert failed here
-  	return 0;
+    static_assert&amp;lt;(13&amp;gt;7)&amp;gt;();	// 13&amp;gt;7 为 true
+    static_assert&amp;lt;(13&amp;lt;7)&amp;gt;();	// assert failed here
+    
+    return 0;
   }
 &lt;/code&gt;&lt;/pre&gt;
 
@@ -340,8 +377,8 @@ int main() {
   #define assert(e) (1/(!!(e)))
   
   int main() {
-  	assert(13&amp;lt;7);	// assert failed. 不同的平台可能得到不同的结果！
-  	return 0;
+    assert(13&amp;lt;7);	// assert failed. 不同的平台可能得到不同的结果！
+    return 0;
   }
 &lt;/code&gt;&lt;/pre&gt;
 
