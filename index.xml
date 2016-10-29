@@ -6,8 +6,117 @@
     <description>Recent content on TL;DR BLOG</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Sat, 15 Oct 2016 23:02:11 +0800</lastBuildDate>
+    <lastBuildDate>Sat, 29 Oct 2016 14:21:52 +0800</lastBuildDate>
     <atom:link href="https://zyx-vec.github.io/myblog/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>开源项目 leveldb 的编译测试</title>
+      <link>https://zyx-vec.github.io/myblog/post/leveldb/</link>
+      <pubDate>Sat, 29 Oct 2016 14:21:52 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/leveldb/</guid>
+      <description>&lt;p&gt;step 0 : git clone &lt;code&gt;leveldb source code&lt;/code&gt;.&lt;/p&gt;
+
+&lt;p&gt;step 1 : cd leveldb&lt;/p&gt;
+
+&lt;p&gt;step 2 : make&lt;/p&gt;
+
+&lt;p&gt;下一步将 include 头文件拷贝到 /usr/include/目录中。&lt;/p&gt;
+
+&lt;p&gt;step 3 : sudo cp -r ./include/leveldb /usr/include&lt;/p&gt;
+
+&lt;p&gt;​   db.h 可能不在 leveldb 目录中，找到他并拷贝到 /usr/include 中即可。&lt;/p&gt;
+
+&lt;p&gt;以下步骤将生成的动态链接库拷贝到 /usr/lib 目录中，创建两个软连接，最终得到 libleveldb.so&lt;/p&gt;
+
+&lt;p&gt;step 4 : sudo cp ./out-shared/libleveldb.so.1.18 /usr/lib&lt;/p&gt;
+
+&lt;p&gt;step 5 : cd /usr/lib&lt;/p&gt;
+
+&lt;p&gt;step 6 : sudo ln -s libleveldb.so.1.18 libleveldb.so.1&lt;/p&gt;
+
+&lt;p&gt;step 7 : sudo ln -s libleveldb.so.1 libleveldb.so&lt;/p&gt;
+
+&lt;p&gt;step 8 : sudo ldconfig&lt;/p&gt;
+
+&lt;p&gt;step 9 : test&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;#include &amp;lt;iostream&amp;gt;
+#include &amp;lt;assert.h&amp;gt;
+#include &amp;lt;string&amp;gt;
+#include &amp;lt;leveldb/db.h&amp;gt;	// 从 usr/include 中寻找头文件。
+
+int main(int argc, char* argv[]) {
+  leveldb::DB* db;
+  leveldb::Options options;
+  options.create_is_missing = true;
+  leveldb::Status status = leveldb::DB::Open(options, &amp;quot;./testdb&amp;quot;, &amp;amp;db);
+  assert(status.ok());
+
+  std::string key = &amp;quot;yellow&amp;quot;;
+  std::string value = &amp;quot;banana&amp;quot;;
+  std::string result;
+
+  status = db-&amp;gt;Put(leveldb::WriteOptions(), key, value);
+  if(status.ok()) {
+  	status = db.Get(leveldb::ReadOptions(), &amp;quot;yellow&amp;quot;, &amp;amp;result);
+    if(status.ok()) {
+  	  std::cout &amp;lt;&amp;lt; result &amp;lt;&amp;lt; std::endl;
+    } else {
+      std::cout &amp;lt;&amp;lt; status.ToString() &amp;lt;&amp;lt; std::endl;
+    }
+  }
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;step 10 : g++ test.cpp -o test -lpthread -lleveldb 用动态链接库链接之。&lt;/p&gt;
+
+&lt;p&gt;step 11 : ./test 运行测试&lt;/p&gt;
+
+&lt;p&gt;step 12 : g++ test.cpp -o test ./out-static/libleveldb.a -lpthread 用静态链接库链接之。&lt;/p&gt;
+
+&lt;p&gt;step 13 : ./test 运行测试&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;// 以下是设置好 leveldb 实用环境之后的目录情况。
+usr/
+usr/include/
+usr/include/leveldb/
+usr/include/leveldb/c.h
+usr/include/leveldb/cache.h
+usr/include/leveldb/comparator.h
+usr/include/leveldb/db.h		// db.h 可能不在 leveldb/ 目录中，拷贝到这里即可。
+usr/include/leveldb/dumpfile.h
+usr/include/leveldb/env.h
+usr/include/leveldb/filter_policy.h
+usr/include/leveldb/iterator.h
+usr/include/leveldb/options.h
+usr/include/leveldb/slice.h
+usr/include/leveldb/status.h
+usr/include/leveldb/table.h
+usr/include/leveldb/table_builder.h
+usr/include/leveldb/write_batch.h
+usr/lib/
+usr/lib/libleveldb.so
+usr/lib/libleveldb.so.1
+usr/lib/libleveldb.so.1.18
+usr/share/
+usr/share/doc/
+usr/share/doc/leveldb/
+usr/share/doc/leveldb/bench/
+usr/share/doc/leveldb/bench/db_bench_sqlite3.cc
+usr/share/doc/leveldb/bench/db_bench_tree_db.cc
+usr/share/doc/leveldb/benchmark.html
+usr/share/doc/leveldb/doc.css
+usr/share/doc/leveldb/impl.html
+usr/share/doc/leveldb/index.html
+usr/share/doc/leveldb/log_format.txt
+usr/share/doc/leveldb/table_format.txt
+usr/share/licenses/
+usr/share/licenses/leveldb/
+usr/share/licenses/leveldb/LICENSE
+&lt;/code&gt;&lt;/pre&gt;
+</description>
+    </item>
     
     <item>
       <title>is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</title>

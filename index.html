@@ -35,6 +35,31 @@
 
         
         <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/leveldb/">开源项目 leveldb 的编译测试</a></h2>
+<div>
+  
+    step 0 : git clone leveldb source code.
+step 1 : cd leveldb
+step 2 : make
+下一步将 include 头文件拷贝到 /usr/include/目录中。
+step 3 : sudo cp -r ./include/leveldb /usr/include
+​ db.h 可能不在 leveldb 目录中，找到他并拷贝到 /usr/include 中即可。
+以下步骤将生成的动态链接库拷贝到 /usr/lib 目录中，创建两个软连接，最终得到 libleveldb.so
+step 4 : sudo cp ./out-shared/libleveldb.so.1.18 /usr/lib
+step 5 : cd /usr/lib
+step 6 : sudo ln -s libleveldb.so.1.18 libleveldb.so.1
+step 7 : sudo ln -s libleveldb.so.1 libleveldb.so
+step 8 : sudo ldconfig
+
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/leveldb/">Read more</a>
+    </footer>
+  
+</div>
+
+        </article>
+        
+        <article>
           <h2><a href="https://zyx-vec.github.io/myblog/post/is_constructible/">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</a></h2>
 <div>
   
@@ -63,36 +88,6 @@ T t(u);	// OK T t = u; // ??? T t = u;	// OK T t(u);	// ???  按照常识，T t(
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/devirtualization/">Read more</a>
-    </footer>
-  
-</div>
-
-        </article>
-        
-        <article>
-          <h2><a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">gdb 基本命令</a></h2>
-<div>
-  
-    GDB 是什么？   GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒近八百多页！
-官方文档：gdb官方文档
-但是常见功能并不是很多，掌握一些常用的命令，需要时再去查看文档即可。
- GDB 中常用的命令
- 运行 gdb 调试器   $ gcc src.c -o a.out -g：其中-g必须加上，不然的话就缺少调试所需要的信息
-$ gdb a.out
- 查看源代码   list ：用于查看当前位置（根据上一次list到哪里来算）起始的10行代码，简写为 l
-list linenum：查看指定行之后的10行源代码
-list function：用于查看指定函数的源代码
- 断点   break linenum：在指定的行位置处设一个断点，简写为 b
-info breakpoints：查看当前所有断点的信息，其中断点的信息包含
-info break n：查看标号为 n 的断点的信息
-clear：删除指定 frame 中的所有断点
-clear location：删除指定位置的断点
-disable [range...]：消除指定范围的断点的效果
-enable [range...]：使能指定范围的断点的效果
- 查看变量值   print var：用于查看指定变量的内容，简写为 p var
-
-    <footer>
-      <a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">Read more</a>
     </footer>
   
 </div>

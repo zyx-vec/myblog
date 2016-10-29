@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="">
+  <meta name="generator" content="Hugo 0.17" />
+  <title>开源项目 leveldb 的编译测试 — TL;DR BLOG</title>
+
+  <meta name="description" content="">
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/leveldb/">
+  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+</head>
+
+
+  <body>
+    <div class="container">
+
+      <header>
+  <h1>开源项目 leveldb 的编译测试</h1>
+
+  
+  <time datetime="2016-10-29 14:21:52 &#43;0800 CST">2016/10/29</time>
+  
+
+  
+</header>
+
+
+      <article>
+        <p>step 0 : git clone <code>leveldb source code</code>.</p>
+
+<p>step 1 : cd leveldb</p>
+
+<p>step 2 : make</p>
+
+<p>下一步将 include 头文件拷贝到 /usr/include/目录中。</p>
+
+<p>step 3 : sudo cp -r ./include/leveldb /usr/include</p>
+
+<p>​   db.h 可能不在 leveldb 目录中，找到他并拷贝到 /usr/include 中即可。</p>
+
+<p>以下步骤将生成的动态链接库拷贝到 /usr/lib 目录中，创建两个软连接，最终得到 libleveldb.so</p>
+
+<p>step 4 : sudo cp ./out-shared/libleveldb.so.1.18 /usr/lib</p>
+
+<p>step 5 : cd /usr/lib</p>
+
+<p>step 6 : sudo ln -s libleveldb.so.1.18 libleveldb.so.1</p>
+
+<p>step 7 : sudo ln -s libleveldb.so.1 libleveldb.so</p>
+
+<p>step 8 : sudo ldconfig</p>
+
+<p>step 9 : test</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;assert.h&gt;
+#include &lt;string&gt;
+#include &lt;leveldb/db.h&gt;	// 从 usr/include 中寻找头文件。
+
+int main(int argc, char* argv[]) {
+  leveldb::DB* db;
+  leveldb::Options options;
+  options.create_is_missing = true;
+  leveldb::Status status = leveldb::DB::Open(options, &quot;./testdb&quot;, &amp;db);
+  assert(status.ok());
+
+  std::string key = &quot;yellow&quot;;
+  std::string value = &quot;banana&quot;;
+  std::string result;
+
+  status = db-&gt;Put(leveldb::WriteOptions(), key, value);
+  if(status.ok()) {
+  	status = db.Get(leveldb::ReadOptions(), &quot;yellow&quot;, &amp;result);
+    if(status.ok()) {
+  	  std::cout &lt;&lt; result &lt;&lt; std::endl;
+    } else {
+      std::cout &lt;&lt; status.ToString() &lt;&lt; std::endl;
+    }
+  }
+}
+</code></pre>
+
+<p>step 10 : g++ test.cpp -o test -lpthread -lleveldb 用动态链接库链接之。</p>
+
+<p>step 11 : ./test 运行测试</p>
+
+<p>step 12 : g++ test.cpp -o test ./out-static/libleveldb.a -lpthread 用静态链接库链接之。</p>
+
+<p>step 13 : ./test 运行测试</p>
+
+<pre><code class="language-c">// 以下是设置好 leveldb 实用环境之后的目录情况。
+usr/
+usr/include/
+usr/include/leveldb/
+usr/include/leveldb/c.h
+usr/include/leveldb/cache.h
+usr/include/leveldb/comparator.h
+usr/include/leveldb/db.h		// db.h 可能不在 leveldb/ 目录中，拷贝到这里即可。
+usr/include/leveldb/dumpfile.h
+usr/include/leveldb/env.h
+usr/include/leveldb/filter_policy.h
+usr/include/leveldb/iterator.h
+usr/include/leveldb/options.h
+usr/include/leveldb/slice.h
+usr/include/leveldb/status.h
+usr/include/leveldb/table.h
+usr/include/leveldb/table_builder.h
+usr/include/leveldb/write_batch.h
+usr/lib/
+usr/lib/libleveldb.so
+usr/lib/libleveldb.so.1
+usr/lib/libleveldb.so.1.18
+usr/share/
+usr/share/doc/
+usr/share/doc/leveldb/
+usr/share/doc/leveldb/bench/
+usr/share/doc/leveldb/bench/db_bench_sqlite3.cc
+usr/share/doc/leveldb/bench/db_bench_tree_db.cc
+usr/share/doc/leveldb/benchmark.html
+usr/share/doc/leveldb/doc.css
+usr/share/doc/leveldb/impl.html
+usr/share/doc/leveldb/index.html
+usr/share/doc/leveldb/log_format.txt
+usr/share/doc/leveldb/table_format.txt
+usr/share/licenses/
+usr/share/licenses/leveldb/
+usr/share/licenses/leveldb/LICENSE
+</code></pre>
+
+      </article>
+
+      <nav class="site-nav">
+  <a href="https://zyx-vec.github.io/myblog/">Home</a>
+  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  
+
+</nav>
+
+
+      <footer class="site-footer">
+  <span class="owner">©2016 </span>
+
+  
+</footer>
+
+
+    </div>
+
+  
+<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+  </body>
+</html>
