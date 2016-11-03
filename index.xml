@@ -115,6 +115,11 @@ usr/share/licenses/
 usr/share/licenses/leveldb/
 usr/share/licenses/leveldb/LICENSE
 &lt;/code&gt;&lt;/pre&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;lrwxrwxrwx  1 root root      15 2016-10-29 08:04 libleveldb.so -&amp;gt; libleveldb.so.1
+lrwxrwxrwx  1 root root      18 2016-10-29 08:03 libleveldb.so.1 -&amp;gt; libleveldb.so.1.18
+-rwxr-xr-x  1 root root  406211 2016-10-29 08:02 libleveldb.so.1.18
+&lt;/code&gt;&lt;/pre&gt;
 </description>
     </item>
     
@@ -288,6 +293,8 @@ int main() {
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;对比两者，可以发现使用了 final 的虚函数的调用并没有用到虚指针 vptr 和虚表 vtable，而是直接进行调用，可见是编译器对此作出了优化；而没有使用 final 的版本就进行了 vptr 和 vtable 的操作，多了很多的操作。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/zyx-vec/Image/master/virtual.png&#34; alt=&#34;虚继承对象模型&#34; /&gt;&lt;/p&gt;
 
 &lt;p&gt;可见随着C++的不断演化，语言中特性的增加，编译器能做的事情也越来越多；从上述的对比中也可以推测性能也会有一定的提升。&lt;/p&gt;
 </description>

@@ -97,6 +97,8 @@ int main() {
 
 <p>对比两者，可以发现使用了 final 的虚函数的调用并没有用到虚指针 vptr 和虚表 vtable，而是直接进行调用，可见是编译器对此作出了优化；而没有使用 final 的版本就进行了 vptr 和 vtable 的操作，多了很多的操作。</p>
 
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/virtual.png" alt="虚继承对象模型" /></p>
+
 <p>可见随着C++的不断演化，语言中特性的增加，编译器能做的事情也越来越多；从上述的对比中也可以推测性能也会有一定的提升。</p>
 
       </article>
