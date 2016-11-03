@@ -1,40 +1,73 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
+<head>
 
   
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="">
-  <meta name="generator" content="Hugo 0.17" />
-  <title>C&#43;&#43;中的devirtualization — TL;DR BLOG</title>
+  <meta charset="UTF-8">
+  <title>
+    C&#43;&#43;中的devirtualization | TL;DR BLOG
+  </title>
 
-  <meta name="description" content="">
-  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/devirtualization/">
-  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
-  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
-  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+
+  
+  <meta name="viewport" content="width=device-width,user-scalable=no,maximum-scale=1,initial-scale=1">
+
+  
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/devirtualization/"/>
+
+  
+  <link rel="stylesheet" href="/css/sanitize.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <link rel="stylesheet" href="/css/highlight_monokai.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  
+  
+  <link href="https://zyx-vec.github.io/myblog/index.xml" rel="alternate" type="application/rss+xml" title="TL;DR BLOG" />
+  <link href="https://zyx-vec.github.io/myblog/index.xml" rel="feed" type="application/rss+xml" title="TL;DR BLOG" />
+
+  
+  
+
+
 </head>
 
 
-  <body>
-    <div class="container">
 
-      <header>
-  <h1>C&#43;&#43;中的devirtualization</h1>
+<body>
+<div class="container">
 
   
-  <time datetime="2016-10-11 16:38:44 &#43;0800 CST">2016/10/11</time>
-  
+  <header role="banner">
+    <div class="row gutters">
+      <div id="site-title" class="col span_6">
+        <h1><a href="https://zyx-vec.github.io/myblog/">TL;DR BLOG</a></h1>
+        <h2>talk less, more action!</h2>
+      </div>
+      <div id="social" class="col span_6">
+        <ul>
+          <li><a href="https://twitter.com/liangdeng3" target="_blank">Twitter</a></li>
+          <li><a href="https://www.facebook.com/liang.deng.7921" target="_blank">Facebook</a></li>
+          <li><a href="https://github.com/zyx-vec" target="_blank">GitHub</a></li>
+          <li><a href="https://zyx-vec.github.io/myblog/index.xml" type="application/rss+xml" target="_blank">RSS</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
 
   
-</header>
-
-
-      <article>
-        <p>我们都知道 C++ 中通过对象中的 <code>vptr</code> 指向 <code>vtable</code> 来实现多态，当然只有指针和引用才能表现出多态，否则的话会发生 <code>slicing</code>，调用构造或者拷贝构造函数，进而重新设置虚表指针 vptr 就不能实现多态。</p>
+  <main id="single" role="main">
+    <div class="article-header">
+      <h1>C&#43;&#43;中的devirtualization</h1>
+      <div class="meta">
+        Oct 11, 2016 &nbsp;
+        
+      </div>
+    </div>
+    <article>
+      <p>我们都知道 C++ 中通过对象中的 <code>vptr</code> 指向 <code>vtable</code> 来实现多态，当然只有指针和引用才能表现出多态，否则的话会发生 <code>slicing</code>，调用构造或者拷贝构造函数，进而重新设置虚表指针 vptr 就不能实现多态。</p>
 
 <p>但 <code>devirtualization</code> 是什么？解虚拟？从字面中我们也能看出，它表面上是虚函数调用，但实际进行的确是 <code>static</code> 的调用，也即编译器将虚函数的调用在编译期就进行了决议（<code>resolution</code>），消除了常规虚函数调用的动作，因为虚函数在运行时调用会经过多次的 <code>indirection</code> ，性能上会有影响，常规虚函数调用会多出几次内存访问，无论对于指令的条数，还是内存访问中的 <code>Cache</code> 局部性都会对性能造成一定的影响。较新版的编译器能够通过 C++11 中的关键词来进行指导 <code>devirtualization</code> ，这个关键词就是 <code>final</code>，因为虚函数中的 <code>override</code> 可以通过 <code>final</code> 来指定终止继续对该虚函数的 <code>override</code>，所以当传递过来的对象指针调用其所在 <code>scope</code> 中的虚函数时，碰巧该虚函数有 <code>final</code> 关键词的修饰，那么编译器就可以<strong><em>断定</em></strong>其一定是调用该类型指针内部的对应的那个虚函数。</p>
 
@@ -101,30 +134,41 @@ int main() {
 
 <p>可见随着C++的不断演化，语言中特性的增加，编译器能做的事情也越来越多；从上述的对比中也可以推测性能也会有一定的提升。</p>
 
-      </article>
+      
+      
+      
+    </article>
+    
 
-      <nav class="site-nav">
-  <a href="https://zyx-vec.github.io/myblog/">Home</a>
-  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  </main>
+  
+  <nav class="pagination-single">
+    
+      <span class="previous">&larr; <a href="https://zyx-vec.github.io/myblog/post/gdb-commands/" rel="prev">gdb 基本命令</a></span>
+    
+    
+      <span class="next"><a href="https://zyx-vec.github.io/myblog/post/is_constructible/" rel="next">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</a> &rarr;</span>
+    
+  </nav>
+
 
   
-
-</nav>
-
-
-      <footer class="site-footer">
-  <span class="owner">©2016 </span>
-
-  
-</footer>
-
-
+  <footer role="contentinfo">
+    <div style="text-align:center;">
+      
+      
     </div>
+  </footer>
 
-  
-<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
+
+</div>
+
+<script src="/js/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
 
-  </body>
+
+</body>
 </html>
+

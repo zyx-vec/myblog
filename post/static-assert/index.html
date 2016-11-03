@@ -1,40 +1,73 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
+<head>
 
   
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="">
-  <meta name="generator" content="Hugo 0.17" />
-  <title>断言assert的实现 — TL;DR BLOG</title>
+  <meta charset="UTF-8">
+  <title>
+    断言assert的实现 | TL;DR BLOG
+  </title>
 
-  <meta name="description" content="">
-  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/static-assert/">
-  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
-  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
-  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+
+  
+  <meta name="viewport" content="width=device-width,user-scalable=no,maximum-scale=1,initial-scale=1">
+
+  
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/static-assert/"/>
+
+  
+  <link rel="stylesheet" href="/css/sanitize.css">
+  <link rel="stylesheet" href="/css/responsive.css">
+  <link rel="stylesheet" href="/css/highlight_monokai.css">
+  <link rel="stylesheet" href="/css/theme.css">
+  <link rel="stylesheet" href="/css/custom.css">
+  
+  
+  <link href="https://zyx-vec.github.io/myblog/index.xml" rel="alternate" type="application/rss+xml" title="TL;DR BLOG" />
+  <link href="https://zyx-vec.github.io/myblog/index.xml" rel="feed" type="application/rss+xml" title="TL;DR BLOG" />
+
+  
+  
+
+
 </head>
 
 
-  <body>
-    <div class="container">
 
-      <header>
-  <h1>断言assert的实现</h1>
+<body>
+<div class="container">
 
   
-  <time datetime="2016-10-11 15:25:05 &#43;0800 CST">2016/10/11</time>
-  
+  <header role="banner">
+    <div class="row gutters">
+      <div id="site-title" class="col span_6">
+        <h1><a href="https://zyx-vec.github.io/myblog/">TL;DR BLOG</a></h1>
+        <h2>talk less, more action!</h2>
+      </div>
+      <div id="social" class="col span_6">
+        <ul>
+          <li><a href="https://twitter.com/liangdeng3" target="_blank">Twitter</a></li>
+          <li><a href="https://www.facebook.com/liang.deng.7921" target="_blank">Facebook</a></li>
+          <li><a href="https://github.com/zyx-vec" target="_blank">GitHub</a></li>
+          <li><a href="https://zyx-vec.github.io/myblog/index.xml" type="application/rss+xml" target="_blank">RSS</a></li>
+        </ul>
+      </div>
+    </div>
+  </header>
+
 
   
-</header>
-
-
-      <article>
-        <p>在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 <code>assert(e)</code> 中的表达式 <code>e</code> 的值必须为真 <code>true</code>，否则的话程序就会 <code>crash</code> 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 <code>crash</code> 掉运行的程序是很激进的做法，但也不失为一种有用的方式。</p>
+  <main id="single" role="main">
+    <div class="article-header">
+      <h1>断言assert的实现</h1>
+      <div class="meta">
+        Oct 11, 2016 &nbsp;
+        
+      </div>
+    </div>
+    <article>
+      <p>在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 <code>assert(e)</code> 中的表达式 <code>e</code> 的值必须为真 <code>true</code>，否则的话程序就会 <code>crash</code> 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 <code>crash</code> 掉运行的程序是很激进的做法，但也不失为一种有用的方式。</p>
 
 <p>本文描述两种 <code>assert</code> 的实现，一种为 <code>compile time</code> （编译时），另一种为 <code>runtime</code> （运行时）。</p>
 
@@ -219,30 +252,39 @@
 
 <p>这里主要探讨了编译时和运行时断言的实现，其中给出了C和C++的两种不同的实现；从中也可以看出一些很hack的做法，都是利用一些语言的特性和运行时的特性来做的。此外还可以联想到C++中哑代码的作用，都是利用一些语言编译过程中需要用到的一些语言规则来实现一些编译时的诊断作用；其中现在正在探讨的Concept就是其中之一，利用这些哑代码就可以实现一些这方面的功能。</p>
 
-      </article>
+      
+      
+      
+    </article>
+    
 
-      <nav class="site-nav">
-  <a href="https://zyx-vec.github.io/myblog/">Home</a>
-  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  </main>
+  
+  <nav class="pagination-single">
+    
+    
+      <span class="next"><a href="https://zyx-vec.github.io/myblog/post/gdb-commands/" rel="next">gdb 基本命令</a> &rarr;</span>
+    
+  </nav>
+
 
   
-
-</nav>
-
-
-      <footer class="site-footer">
-  <span class="owner">©2016 </span>
-
-  
-</footer>
-
-
+  <footer role="contentinfo">
+    <div style="text-align:center;">
+      
+      
     </div>
+  </footer>
 
-  
-<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
+
+</div>
+
+<script src="/js/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
 
-  </body>
+
+</body>
 </html>
+
