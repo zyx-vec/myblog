@@ -60,7 +60,7 @@
 .hljs {
   display: block;
   overflow-x: auto;
-  background: #1d2d2d;
+  background: #1d2d2d; /* #e0f0f0 #1d2d2d */
   color: #cccccc;
   padding: 0.5em;
 }

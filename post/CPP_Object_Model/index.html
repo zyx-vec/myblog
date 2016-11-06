@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="">
+  <meta name="generator" content="Hugo 0.17" />
+  <title>探讨C&#43;&#43; 对象模型 — TL;DR BLOG</title>
+
+  <meta name="description" content="">
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">
+  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+</head>
+
+
+  <body>
+    <div class="container">
+
+      <header>
+  <h1>探讨C&#43;&#43; 对象模型</h1>
+
+  
+  <time datetime="2016-11-06 20:57:19 &#43;0800 CST">2016/11/06</time>
+  
+
+  
+</header>
+
+
+      <article>
+        <p>C++ 起源于 C，能够进行底层操作，美其名曰“面向内存”编程；和 Java、Python 等语言不一样，C++ 中的“对象”的内存布局是可以被利用的，也即面向内存编程的真谛，而相 Java 中你创建一个对象，但是对象中包含很多的“控制”信息，内存效率比C++低，性能也更低。</p>
+
+<p>除开 C++ 中的基本类型，掌握 C++ 中的对象模型，对于理解一些C++中的常见套路是很有帮助的，例如 C++ 中的 rule of three，运行时多态的实现等等。</p>
+
+<p>而对象模型中最重要的就是 virtual 机制，C++ 就是通过其实现运行时多态（runtime polymorphism）。“多态”按字面意思即多种表现形态，C++中就是将一样的接口表现出不同的运行结果，故有编译时多态（compile time polymorphism）- 重载和模板 和 运行时多态（runtime compile polymorphism）。我们都知道 C++ 有强大的模板，而模板的开销主要在编译时，对应的运行时多态的开销主要体现在对象模型上，其中最重要的就是虚函数指针和虚函数表的存在，本文的目的就是探讨C++中的对象模型中的 virtual 机制。</p>
+
+<p><strong>虚函数的作用</strong></p>
+
+<p>虚函数的作用就是运行时多态，先看如下代码</p>
+
+<pre><code class="language-c++">class Animal {
+  virtual void spark() = 0;
+};
+
+class Dog {
+  void spark() { cout &lt;&lt; &quot;WangWang~\n&quot;; }
+};
+
+class Cat {
+  void spark() { cout &lt;&lt; &quot;Meow~\n&quot;; }
+};
+
+Animal *pet1 = new Dog();
+Animal *pet2 = new Cat();
+pet1-&gt;spark();	// WangWang~
+pet2-&gt;spark();	// Meow~
+</code></pre>
+
+<p>从中可见，利用同样的运行时类型 Animal*，使用同样的接口（Interface），最终表现出不一样的行为状态。这就是运行时多态的目标，具体参考《C++程序设计与演化》（C++ D&amp;E）来探讨该技术的来源，和其中所经历的过程。</p>
+
+<p><strong>虚函数在对象中的具体存在形式</strong></p>
+
+<p>virtual 机制只在指针和引用上起作用，因为如果将子类对象赋值给父类对象，那么就会发生父类对象的“构造”，构造的过程中就会重新设置对象中的 virtual pointer，同时发生对象切片，将子类对象中的父类部分赋值给被构造的父类对象。</p>
+
+<p>声明为 virtual 的函数即为虚函数，派生类 override 父类对象中的 virtual 函数时可以不用 virtual 来修饰；类中有 virtual 函数（自己拥有或者继承而来的）的对象中都会有至少一个虚指针 _vptr，该指针指向对应的虚表 vtable。</p>
+
+<p>考虑如下代码</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;cassert&gt;
+using namespace std;
+
+class Base {
+public:
+	Base() : a(0) {}
+	virtual void fun1() {
+		cout &lt;&lt; &quot;Base::fun1&quot; &lt;&lt; endl;
+	}
+	virtual void fun2() {
+		cout &lt;&lt; &quot;Base::fun2&quot; &lt;&lt; endl;
+	}
+private:
+	int a;
+};
+
+typedef void (*funPtr)();  // 定义类型为 void () 的函数指针类型
+
+int main() {
+	Base b;
+	// 枚举 Base 的对象 b 中的内存内容
+	cout &lt;&lt; &quot;-----obj-----\n&quot;;
+	for(int i = 0; i &lt; sizeof(b); i+=4) {
+		cout &lt;&lt; hex &lt;&lt; *((int *)(((char*)&amp;b)+i)) &lt;&lt; endl;
+	}
+	// 利用vptr找到虚表，然后枚举调用虚表中函数
+	cout &lt;&lt; &quot;-----vtable-----\n&quot;;
+	int *fx = (int *)(*((int *)(((char*)&amp;b)+0)));
+	((funPtr)(fx[0]))();  // 调用虚函数
+	((funPtr)(fx[1]))();
+	
+	return 0;
+}
+</code></pre>
+
+<p>用 g++ 编译运行改代码可以得到如下结果（不同的环境下可能得到不同的数值）</p>
+
+<pre><code class="language-c++">-----obj-----
+40a5b8	&lt;-------------- _vptr 的值，指向虚表的起始地址
+0		&lt;-------------- 对象中数据成员 a
+-----vtable-----
+Base::fun1	&lt;---------- 利用虚表中的第一个指针成员成功调用 virtual void fun1 函数
+Base::fun2	&lt;---------- 利用虚表中的第一个指针成员成功调用 virtual void fun2 函数
+</code></pre>
+
+<p>通过该结果，就可以刻画出virtual 机制下 的对象模型</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/%E8%99%9A%E8%A1%A8.png" alt="虚表" /></p>
+
+<p>可见 obj 对象中保存着一个 _vptr，其指向一个虚表，虚表中存放着函数的地址（指令的地址），当进行虚函数调用时，通过 _vptr 找到虚表，再通过虚表找到具体的指令地址（对应调用函数的代码区域），可见这里涉及到多次跳转；但不要忘了 C++ 中有 devirtualization 的优化机制，可以参考之前的文章：<a href="https://zyx-vec.github.io/myblog/post/devirtualization/">C++中的devirtualization机制</a>。</p>
+
+<p><strong>单继承</strong></p>
+
+<p>弄明白虚函数的具体存在形式之后，就可以探讨更深入一点的话题了；面向对象中必不可少的就是继承。C++ 中有多种继承方式，首先来探讨一下简单的单继承。</p>
+
+<p>测试代码</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+using namespace std;
+
+class Base {
+public:
+	Base() : b(0) {}
+	virtual void fun1() {
+		cout &lt;&lt; &quot;Base::fun1&quot; &lt;&lt; endl;
+	}
+	virtual void fun2() {
+		cout &lt;&lt; &quot;Base::fun2&quot; &lt;&lt; endl;
+	}
+private:
+	int b;
+};
+
+class Derived : public Base { // 公有继承，表 is-a 的关系
+public:
+	Derived() : d(1) {}
+	virtual void fun2() {     // override 基类中的 fun2 函数
+		cout &lt;&lt; &quot;Derived::fun2&quot; &lt;&lt; endl;
+	}
+	virtual void unique() {   // 派生类中独有的 virtual 函数 unique
+		cout &lt;&lt; &quot;Derived::unique&quot; &lt;&lt; endl;
+	}
+private:
+	int d;
+};
+
+typedef void (*funPtr)();
+
+int main() {
+	Base b;
+	
+	cout &lt;&lt; &quot;-----base::obj-----\n&quot;;
+	for(int i = 0; i &lt; sizeof(b); i+=4) {
+		cout &lt;&lt; hex &lt;&lt; *((int *)(((char*)&amp;b)+i)) &lt;&lt; endl;
+	}
+	cout &lt;&lt; &quot;-----base::vtable-----\n&quot;;
+	int *fx = (int *)(*((int *)(((char*)&amp;b)+0)));
+	((funPtr)(fx[0]))();
+	((funPtr)(fx[1]))();
+	cout &lt;&lt; fx[2] &lt;&lt; endl;
+	
+	
+	Derived d;
+	cout &lt;&lt; &quot;-----derived::obj-----\n&quot;;
+	for(int i = 0; i &lt; sizeof(d); i+=4) {
+		cout &lt;&lt; hex &lt;&lt; *((int *)(((char*)&amp;d)+i)) &lt;&lt; endl;
+	}
+	cout &lt;&lt; &quot;-----derived::vtable-----\n&quot;;
+	int *fs = (int *)(*((int *)(((char*)&amp;d)+0)));
+	((funPtr)(fs[0]))();
+	((funPtr)(fs[1]))();
+	((funPtr)(fs[2]))();
+	cout &lt;&lt; fx[3] &lt;&lt; endl;
+	
+	return 0;
+}
+</code></pre>
+
+<p>用 g++ 编译运行的结果（不同的环境，结果可能不同）</p>
+
+<pre><code class="language-c++">-----base::obj-----
+40a610		&lt;--------------- Base类的对象b中的 _vptr
+0			&lt;--------------- Base类的对象b中的数据成员 a
+-----base::vtable-----
+Base::fun1	&lt;--------------- 枚举Base类对应的虚表中的函数指针，进行调用
+Base::fun2
+0			&lt;--------------- Base类的虚表中的最后一个成员值为 0
+-----derived::obj-----
+40a620		&lt;--------------- Derived派生类的对象d中的 _vptr
+0			&lt;--------------- Derived派生类的对象d中继承基类中的数据成员 a
+1			&lt;--------------- Derived派生类的对象d中自己定义的数据成员 b
+-----derived::vtable-----
+Base::fun1		&lt;----------- Derived类中虚表中对应的第1个虚函数
+Derived::fun2	&lt;----------- Derived类中虚表中对应的第2个虚函数
+Derived::unique &lt;----------- Derived类中虚表中对应的第3个虚函数
+40a5e8			&lt;----------- Derived类中虚表中的最后一个值
+</code></pre>
+
+<p>通过图形来表示就是</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/%E5%8D%95%E7%BB%A7%E6%89%BF.png" alt="单继承" /></p>
+
+<p>其中上半部分表示Base类的对象b的内存表示，下半部分表示Derived派生类的对象d的内存表示，可见派生类中 override 的基类虚函数会在派生类的虚表中被替换成 override 之后的对应的函数地址，如上图中的 Derived::&amp;fun2 函数，同时可以发现单继承形式下派生类和和基类“共用”了一个虚指针。</p>
+
+<p><strong>多重继承</strong></p>
+
+<p>C++ 和很多面向对象的语言不一样，它支持多继承，而像 Java 之类的就不支持多重继承；当然支持多继承既有好处也有不足，首先从实际现实情况来说，支持多继承是很自然的一件事，但多继承也会带来很多的麻烦，感兴趣的可以看一看 Ruby 之父：<a href="https://www.wikiwand.com/zh-cn/%E6%9D%BE%E6%9C%AC%E8%A1%8C%E5%BC%98">松本行弘</a> 写的一本书 <a href="https://book.douban.com/subject/6756090/">松本行弘的程序世界</a>，其中就给出了为什么 Ruby 中没有多继承，以及探讨了多继承的优缺点。</p>
+
+<p>多重继承如何处理多个基类中的虚函数？如何处理多个基类之间的虚表和派生类的虚表之间的存储的问题？</p>
+
+<p>示例代码</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+#include &lt;cassert&gt;
+using namespace std;
+
+class Base1 {
+public:
+	Base1() : b1(0) {}
+	virtual void fun1() {
+		cout &lt;&lt; &quot;Base1::fun1&quot; &lt;&lt; endl;
+	}
+	virtual void fun2() {
+		cout &lt;&lt; &quot;Base1::fun2&quot; &lt;&lt; endl;
+	}
+private:
+	int b1;
+};
+
+class Base2 {
+public:
+	Base2() : b2(1) {}
+	virtual void fun1() {
+		cout &lt;&lt; &quot;Base2::fun1&quot; &lt;&lt; endl;
+	}
+	virtual void fun2() {
+		cout &lt;&lt; &quot;Base2::fun2&quot; &lt;&lt; endl;
+	}
+private:
+	int b2;
+};
+
+class Derived : public Base1, public Base2 {
+public:
+	Derived() : d(2) {}
+	virtual void fun2() {
+		cout &lt;&lt; &quot;Derived::fun2&quot; &lt;&lt; endl;
+	}
+	virtual void unique() {
+		cout &lt;&lt; &quot;Derived::unique&quot; &lt;&lt; endl;
+	}
+private:
+	int d;
+};
+
+typedef void (*funPtr)();
+
+int main() {
+	Derived d;	
+	
+	cout &lt;&lt; &quot;-----Derived::obj-----\n&quot;;
+	for(int i = 0; i &lt; sizeof(d); i+=4) {
+		cout &lt;&lt; hex &lt;&lt; *((int *)(((char*)&amp;d)+i)) &lt;&lt; endl;
+	}
+	cout &lt;&lt; &quot;-----Derived::vtable1-----\n&quot;;	// 枚举虚表
+	int *fx = (int *)(*((int *)(((char*)&amp;d)+0)));
+	((funPtr)(fx[0]))();
+	((funPtr)(fx[1]))();
+	((funPtr)(fx[2]))();
+	cout &lt;&lt; &quot;-----Derived::vtable2-----\n&quot;;
+	int *fs = (int *)(*((int *)(((char*)&amp;d)+8)));
+	((funPtr)(fs[0]))();
+	((funPtr)(fs[1]))();
+	
+	return 0;
+}
+</code></pre>
+
+<p>g++ 下的运行结果（环境不同，结果可能不同）</p>
+
+<pre><code>-----Derived::obj-----
+40a668		&lt;------------------- Base1._vptr
+0			&lt;------------------- Base1.b1
+40a67c		&lt;------------------- Base2._vptr
+1			&lt;------------------- Base2.b2
+2			&lt;------------------- Derived.d
+-----Derived::vtable1-----
+Base1::fun1
+Derived::fun2
+Derived::unique
+-----Derived::vtable2-----
+Base2::fun1
+Derived::fun2
+</code></pre>
+
+<p>绘制成图就是</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/%E5%A4%9A%E9%87%8D%E7%BB%A7%E6%89%BF.png" alt="多重继承" /></p>
+
+<p>由此也可以总结出多重继承中 Derived::_vptr其实是和 Base::__vptr“共用”的，其中 Base1 和 Base2 中都有的 fun2 函数，由于在 Derived 被 override 覆盖了，所以会体现到两个虚表中；同时应当注意到此处只有上面的那个虚表中有 Derived::&amp;unique 函数存在，当然这语义上并没有什么关系，因为无论是将 Derived 类的对象的地址赋给 Base1* 还是 Base2* 他们都不能寻址到 unique 到，因为在这两者的类型上根本就没有定义 unique 函数，所以不会有什么影响。而 fun2 就不一样了，因为 Base1* 和 Base2*（或者引用）上是有接口 fun2 的，所以两个虚表中的 fun2 的对应的地址都要被修改，否则的话将派生类通过基类 Base1 和 Base2 的指针和引用进行的调用将表现出不一样的东西，这当让不是我们想要的，因为我们已经在派生类中重写了虚函数 fun2。</p>
+
+<p>同时注意到上一个虚表中最后一个元素中存放的是值 -8，这刚好是 Base1 和 Base2 在 Derived 中对应的subtype 子对象的偏移量 8。编译器可以利用它来进行类型转换的操作（casting）。</p>
+
+<p><strong>钻石型继承</strong></p>
+
+<p>存在多重继承，那么必然会出现钻石型继承（菱形继承）的情况，因为会有多条继承路径存在，会出现相交的情况。</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/duplicatei.png" alt="钻" /></p>
+
+<p>如上图所示，其中最终的类 D 中派生两个相同的 Base 类，那么如果常规做法的话 D 类的对象中会存在两个 Base 对象的实例，这有可能（极有可能）不是我们想要的。</p>
+
+<p>1、首先探讨存在子对象重复的情况</p>
+
+<p>实例代码</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+using namespace std;
+
+class Base {
+public:
+	Base() : b(0) {}
+	Base(int x) : b(x) {}
+	virtual void foo() {
+		cout &lt;&lt; &quot;Base::foo &quot; &lt;&lt; b &lt;&lt; endl;
+	}
+private:
+	int b;
+};
+
+class D1 : public Base {
+public:
+	D1() : Base(1), d1(1) {}
+	virtual void bar() {
+		cout &lt;&lt; &quot;D1::bar&quot; &lt;&lt; endl;
+	}
+	virtual void buzz() {
+		cout &lt;&lt; &quot;D1::buzz&quot; &lt;&lt; endl;
+	}
+private:
+	int d1;
+};
+
+class D2 : public Base {
+public:
+	D2() : Base(2), d2(2) {}
+	virtual void bar() {
+		cout &lt;&lt; &quot;D2::bar&quot; &lt;&lt; endl;
+	}
+	virtual void buzz() {
+		cout &lt;&lt; &quot;D2::buzz&quot; &lt;&lt; endl;
+	}
+private:
+	int d2;
+};
+
+class Derived : public D1, public D2 {
+public:
+	Derived() : d(13) {}
+	virtual void buzz() {
+		cout &lt;&lt; &quot;Derived::buzz&quot; &lt;&lt; endl;
+	}
+private:
+	int d;
+};
+
+typedef void (*funPtr)();
+
+int main() {
+	Derived d;	
+	cout &lt;&lt; &quot;-----Derived::obj-----\n&quot;;
+	for(int i = 0; i &lt; sizeof(d); i+=4) {
+		cout &lt;&lt; hex &lt;&lt; *((int *)(((char*)&amp;d)+i)) &lt;&lt; endl;
+	} 
+	
+	// 忽略 foo 中输出的 b 的值
+	cout &lt;&lt; &quot;-----Derived::vtable-----\n&quot;;
+	int *fx = (int *)(*((int *)(((char*)&amp;d)+0)));
+	((funPtr)(fx[0]))();
+	((funPtr)(fx[1]))();
+	((funPtr)(fx[2]))();
+	cout &lt;&lt; fx[3] &lt;&lt; endl;
+	
+	cout &lt;&lt; &quot;-----Derived::vtable-----\n&quot;;
+	fx = (int *)(*((int *)(((char*)&amp;d)+12)));
+	((funPtr)(fx[0]))();
+	((funPtr)(fx[1]))();
+	((funPtr)(fx[2]))();
+	cout &lt;&lt; fx[3] &lt;&lt; endl;
+	
+	return 0;
+}
+</code></pre>
+
+<p>g++ 编译后运行结果（不同的环境，结果可能不同）：</p>
+
+<pre><code class="language-c++">-----Derived::obj-----
+40a668		&lt;------------------ D1._vptr
+1			&lt;------------------ D1.B.b
+1			&lt;------------------ D1.d1
+40a67c		&lt;------------------ D2._vptr
+2			&lt;------------------ D2.B.b
+2			&lt;------------------ D2.d2
+d			&lt;------------------ D.d 十六进制，十进制值为 13，可以对上
+-----Derived::vtable-----
+Base::foo 6		&lt;------------------ D1._vptr 指向的虚表中的各个函数，（忽略这里的 6 ：（
+D1::bar
+Derived::buzz
+fffffff4		&lt;------------------ D1._vptr 指向的虚表中最后一个元素的值为 -12
+-----Derived::vtable-----
+Base::foo 6		&lt;------------------ D2._vptr 指向的虚表中的各个函数
+D2::bar
+Derived::buzz
+0
+</code></pre>
+
+<p>利用 gdb 等调试工具，也可以具体的查看其中的内容，最后绘制成图如下</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/duplicate.png" alt="duplicate" /></p>
+
+<p>由此也可以看出，D 类的对象中有两个虚指针，同时有两个 Base 的子对象实例，这里出现了重复，也就是有 D::D1::Base::b = 1 和 D::D2::Base::b = 2 两个重复的成员，这极有可能和我们的想法有出入。同时要注意到这里存在 D1::&amp;bar 和 D2::&amp;bar 的函数指针，但它并不会在 D 中与编译时造成冲突，除非发生对 bar 函数的调用，因为会出现歧义；而如果进行限定的话是可以成功调用的，即D1::bar() or D2::bar()。</p>
+
+<p>除此之外，在第一个虚表中的最后一个元素中存放了一个值：-12，这和 subtype 的偏移是一致的；这也和我们之前的讨论是一致的。</p>
+
+<p>2、从上面的讨论可以发现由于多重继承的存在，引入了子类型重复的现象。</p>
+
+<p>C++ 中引入了 virtual 继承的机制，让原本可能出现子对象重复的现象，通过子对象共享的技术使的子对象值存在一个实例。</p>
+
+<p>如下图所示，其中让 D 类的对象中只有一个 Base 子实例。</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/virtuali.png" alt="钻石" /></p>
+
+<p>示例代码</p>
+
+<pre><code class="language-c++">#include &lt;iostream&gt;
+using namespace std;
+
+class Base {
+public:
+	Base() : b(0) {}
+	Base(int x) : b(x) {}
+	virtual void foo() {
+		cout &lt;&lt; &quot;Base::foo &quot; &lt;&lt; b &lt;&lt; endl;
+	}
+private:
+	int b;
+};
+
+class D1 : virtual public Base {  // virtual 继承
+public:
+	D1() : Base(1), d1(1) {}
+	virtual void bar() {
+		cout &lt;&lt; &quot;D1::bar&quot; &lt;&lt; endl;
+	}
+	virtual void buzz() {
+		cout &lt;&lt; &quot;D1::buzz&quot; &lt;&lt; endl;
+	}
+private:
+	int d1;
+};
+
+class D2 : virtual public Base {
+public:
+	D2() : Base(2), d2(2) {}
+	virtual void bar() {
+		cout &lt;&lt; &quot;D2::bar&quot; &lt;&lt; endl;
+	}
+	virtual void buzz() {
+		cout &lt;&lt; &quot;D2::buzz&quot; &lt;&lt; endl;
+	}
+private:
+	int d2;
+};
+
+class Derived : public D1, public D2 {
+public:
+	Derived() : d(13) {}
+	virtual void buzz() {
+		cout &lt;&lt; &quot;Derived::buzz&quot; &lt;&lt; endl;
+	}
+private:
+	int d;
+};
+
+typedef void (*funPtr)();
+
+int main() {
+	Derived d;	
+	cout &lt;&lt; &quot;-----obj-----\n&quot;;	
+	for(int i = 0; i &lt; sizeof(d); i+=4) {
+		cout &lt;&lt; hex &lt;&lt; *((int *)(((char*)&amp;d)+i)) &lt;&lt; endl;
+	}
+	// 忽略 foo 中输出的 b 的值
+	cout &lt;&lt; &quot;-----vtable-----\n&quot;;
+	int *fx = (int *)(*((int *)(((char*)&amp;d)+0)));
+	((funPtr)(fx[0]))();
+	((funPtr)(fx[1]))();
+	cout &lt;&lt; fx[2] &lt;&lt; endl;
+	
+	cout &lt;&lt; &quot;-----vtable-----\n&quot;;
+	fx = (int *)(*((int *)(((char*)&amp;d)+8)));
+	((funPtr)(fx[0]))();
+	((funPtr)(fx[1]))();
+	cout &lt;&lt; fx[2] &lt;&lt; endl;
+	
+	cout &lt;&lt; &quot;-----vtable-----\n&quot;;
+	fx = (int *)(*((int *)(((char*)&amp;d)+20)));
+	((funPtr)(fx[0]))();
+	cout &lt;&lt; fx[1] &lt;&lt; endl;
+	
+	return 0;
+}
+
+/* gdb 中查看的结果
+$8 = {
+		&lt;D1&gt; = {&lt;Base&gt; = {_vptr.Base = 0x40a734 &lt;vtable for Derived+52&gt;, b = 0},
+				_vptr.D1 = 0x40a70c &lt;vtable for Derived+12&gt;, d1 = 1},
+		&lt;D2&gt; = {_vptr.D2 = 0x40a720 &lt;vtable for Derived+32&gt;, d2 = 2},
+		d = 13
+	 }
+*/
+</code></pre>
+
+<p>g++ 中编译之后的运行结果（不同的环境，结果可能不同）</p>
+
+<pre><code class="language-c++">-----obj-----
+40a70c		&lt;------------------- D1._vptr
+1			&lt;------------------- D1.d1
+40a720		&lt;------------------- D2._vptr
+2			&lt;------------------- D2.d2
+d			&lt;------------------- D.d 十进制值为 13，此处为十六进制 0xd
+40a734		&lt;------------------- Base._vptr
+0			&lt;------------------- Base.b，构造方式改变，值变成了 default value
+-----vtable-----
+D1::bar
+Derived::buzz
+c			&lt;------------------- 对应十进制值 12
+-----vtable-----
+D2::bar
+Derived::buzz
+0
+-----vtable-----
+Base::foo 6
+0
+</code></pre>
+
+<p>通过调试器 gdb 和基本的测试可以绘制出下述的对象 d 的模型</p>
+
+<p><img src="https://raw.githubusercontent.com/zyx-vec/Image/master/virtual.png" alt="virtual" /></p>
+
+<p>由此可以看出，利用虚继承的机制，可以让派生类D的对象 d 中只有一个Base实例，也即上图中的绿色标注的部分。同时具体的 subtype 的关系见上述标注，用上偏移信息可以轻松的推导出来。注意到此时对象中的虚函数表编程了三个，因为Base子对象要单独出来形成共享，所以不能和其他子对象进行合并，所以就多出来一个。关于具体的解释，结合上图和上面的给出的代码，自行研讨，应该可以马上得出结果。</p>
+
+<ul>
+<li>总结</li>
+</ul>
+
+<p>到此已经对一些 C++ 中基本的对象模型探讨完毕，实在是不容易啊，相信到这里对 C++ 中的对象模型也有了比较清晰的认识，当然本文只针对 g++ 编译器完成，不同的编译器可能会有不同的实现方式，也即会有不同的 ABI（Application Binary Interface）；因为这些的具体实现都是在 C++ 中没有提及的，标准只是给出了效果，并没有规定实现方式，所以不同的厂商会有不同的发挥，比如 VC++ 就可能和 g++ 会有一定的区别，但是区别应该不大，都是通过虚指针和虚表来操作的。</p>
+
+      </article>
+
+      <nav class="site-nav">
+  <a href="https://zyx-vec.github.io/myblog/">Home</a>
+  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  
+
+</nav>
+
+
+      <footer class="site-footer">
+  <span class="owner">©2016 </span>
+
+  
+</footer>
+
+
+    </div>
+
+  
+<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+  </body>
+</html>
