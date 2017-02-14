@@ -1,35 +1,40 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>探讨C&#43;&#43; 对象模型 | TL;DR BLOG</title>
-<link rel="stylesheet" href="https://zyx-vec.github.io/myblog//css/style.css">
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
 
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/default.min.css">
+  
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="tldr">
+  <meta name="generator" content="Hugo 0.18.1" />
+  <title>探讨C&#43;&#43; 对象模型 — TL;DR BLOG</title>
+
+  <meta name="description" content="">
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">
+  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+</head>
 
 
-<section class="section">
-  <div class="container">
-    <nav class="nav">
-      <div class="nav-left">
-        <a class="nav-item" href="https://zyx-vec.github.io/myblog/"><h1 class="title is-4">TL;DR BLOG</h1></a>
-      </div>
-      <div class="nav-right">
-        <nav class="nav-item level is-mobile">
-          
-        </nav>
-      </div>
-    </nav>
-  </div>
-</section>
+  <body>
+    <div class="container">
 
-<section class="section">
-  <div class="container">
-    <h2 class="subtitle is-6">November 6, 2016</h2>
-    <h1 class="title">探讨C&#43;&#43; 对象模型</h1>
-    <div class="content">
-      <p>C++ 起源于 C，兼具底层和高级抽象的能力，能够进行底层操作，往往也称为“面向内存”编程；和 Java、Python 等语言不一样，C++ 中的“对象”的内存布局是透明的，可以被利用的（大雾，切勿依靠没有写入标准的一般经验），也即“面向内存”编程，而在 Java 中创建一个自己编写类的对象，但是对象实例中包含很多的“控制”和“辅助”信息，比如对象头等，内存效率比C++低，性能也更低。</p>
+      <header>
+  <h1>探讨C&#43;&#43; 对象模型</h1>
+
+  
+  <time datetime="2016-11-06 20:57:19 &#43;0800 CST">2016/11/06</time>
+  
+
+  
+</header>
+
+
+      <article>
+        <p>C++ 起源于 C，兼具底层和高级抽象的能力，能够进行底层操作，往往也称为“面向内存”编程；和 Java、Python 等语言不一样，C++ 中的“对象”的内存布局是透明的，可以被利用的（大雾，切勿依靠没有写入标准的一般经验），也即“面向内存”编程，而在 Java 中创建一个自己编写类的对象，但是对象实例中包含很多的“控制”和“辅助”信息，比如对象头等，内存效率比C++低，性能也更低。</p>
 
 <p>除开 C++ 中的基本类型，掌握 C++ 中的对象模型，对于理解一些C++中的常见套路是很有帮助的，例如 C++ 中的 rule of three，运行时多态等等。</p>
 
@@ -565,18 +570,32 @@ Base::foo 6
 
 <p>到此对一些 C++ 中基本的对象模型已经探讨完毕，实在是不容易啊，相信对 C++ 中的对象模型也有了比较清晰的认识，当然这里只针对 g++ 编译器完成，不同的编译器可能会有不同的实现方式，也即会有不同的 ABI（Application Binary Interface）；因为这些的具体实现都是在 C++ 标准中没有提及的，标准只是给出了效果，并没有规定实现方式，所以不同的厂商会有不同的发挥，比如 VC++ 就可能和 g++ 会有一定的区别，但是区别应该不大，虚指针和虚表是关键。</p>
 
+      </article>
+
+      <nav class="site-nav">
+  <a href="https://zyx-vec.github.io/myblog/">Home</a>
+  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  
+
+    
+
+</nav>
+
+
+      <footer class="site-footer">
+  <span class="owner">©2016 tldr</span>
+
+  
+</footer>
+
+
     </div>
-  </div>
-</section>
 
-
-<section class="section">
-  <div class="container has-text-centered">
-    <p></p>
-  </div>
-</section>
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
-
+  
+<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
 
+  </body>
+</html>

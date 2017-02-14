@@ -1,58 +1,63 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TL;DR BLOG</title>
-<link rel="stylesheet" href="https://zyx-vec.github.io/myblog//css/style.css">
-<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
 
-<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/default.min.css">
+  
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="tldr">
+  <meta name="generator" content="Hugo 0.18.1" />
+  <title>TL;DR BLOG</title>
+
+  <meta name="description" content="">
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/">
+  <link href="https://zyx-vec.github.io/myblog/index.xml" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+</head>
 
 
-<section class="section">
-  <div class="container">
-    <nav class="nav">
-      <div class="nav-left">
-        <a class="nav-item" href="https://zyx-vec.github.io/myblog/"><h1 class="title is-4">TL;DR BLOG</h1></a>
-      </div>
-      <div class="nav-right">
-        <nav class="nav-item level is-mobile">
-          
-        </nav>
-      </div>
-    </nav>
-  </div>
-</section>
+  <body>
+    <div class="container">
 
-<section class="section">
-  <div class="container">
-    
-    <article>
-      <h2 class="subtitle is-6">November 6, 2016</h2>
-      <h1 class="title"><a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">探讨C&#43;&#43; 对象模型</a></h1>
-      <div class="content">
-        C++ 起源于 C，兼具底层和高级抽象的能力，能够进行底层操作，往往也称为“面向内存”编程；和 Java、Python 等语言不一样，C++ 中的“对象”的内存布局是透明的，可以被利用的（大雾，切勿依靠没有写入标准的一般经验），也即“面向内存”编程，而在 Java 中创建一个自己编写类的对象，但是对象实例中包含很多的“控制”和“辅助”信息，比如对象头等，内存效率比C++低，性能也更低。
+      <header>
+  <h1>TL;DR BLOG</h1>
+
+  
+
+  
+</header>
+
+
+      <section>
+
+        
+        <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">探讨C&#43;&#43; 对象模型</a></h2>
+<div>
+  
+    C++ 起源于 C，兼具底层和高级抽象的能力，能够进行底层操作，往往也称为“面向内存”编程；和 Java、Python 等语言不一样，C++ 中的“对象”的内存布局是透明的，可以被利用的（大雾，切勿依靠没有写入标准的一般经验），也即“面向内存”编程，而在 Java 中创建一个自己编写类的对象，但是对象实例中包含很多的“控制”和“辅助”信息，比如对象头等，内存效率比C++低，性能也更低。
 除开 C++ 中的基本类型，掌握 C++ 中的对象模型，对于理解一些C++中的常见套路是很有帮助的，例如 C++ 中的 rule of three，运行时多态等等。
 而对象模型中最重要的就是 virtual 机制，C++ 就是通过其实现运行时多态（runtime polymorphism）。“多态”按字面意思即多种表现形态，C++中就是利用相同的接口表现出不同的运行结果，故有编译时多态（compile time polymorphism）- 重载、模板 和 运行时多态（runtime compile polymorphism）。我们都知道 C++ 有强大的模板，而模板的开销主要在编译时，对应的运行时多态的开销主要体现在对象模型上，其中最重要的就是虚函数指针和虚函数表的存在，本文的目的就是探讨C++中的对象模型中的 virtual 机制。
 虚函数的作用
 虚函数的作用就是运行时多态，先看如下代码
 class Animal { virtual void bark() = 0; }; class Dog : public Animal { void bark() { cout &lt;&lt; &quot;WangWang~\n&quot;; } }; class Cat : public Animal { void bark() { cout &lt;&lt; &quot;Meow~\n&quot;; } }; Animal *pet1 = new Dog(); Animal *pet2 = new Cat(); pet1-&gt;bark();	// WangWang~ pet2-&gt;bark();	// Meow~  由此可见，利用同样的运行时类型 Animal*，使用同样的接口（Interface），最终表现出不一样的行为状态。这就是运行时多态的目标，具体参考《C++程序设计与演化》（C++ D&amp;E）来探讨该技术的来源，和其中所经历的过程。
+
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">Read more</a>
+    </footer>
+  
+</div>
+
+        </article>
         
-        ...<a class="button is-link" href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/" style="height:28px">
-          Read more
-          <span class="icon is-small">
-            <i class="fa fa-angle-double-right"></i>
-          </span>
-        </a>
-        
-      </div>
-    </article>
-    
-    <article>
-      <h2 class="subtitle is-6">October 29, 2016</h2>
-      <h1 class="title"><a href="https://zyx-vec.github.io/myblog/post/leveldb/">开源项目 leveldb 的编译测试</a></h1>
-      <div class="content">
-        step 0 : git clone leveldb source code.
+        <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/leveldb/">开源项目 leveldb 的编译测试</a></h2>
+<div>
+  
+    step 0 : git clone leveldb source code.
 step 1 : cd leveldb
 step 2 : make
 下一步将 include 头文件拷贝到 /usr/include/目录中。
@@ -64,148 +69,59 @@ step 5 : cd /usr/lib
 step 6 : sudo ln -s libleveldb.so.1.18 libleveldb.so.1
 step 7 : sudo ln -s libleveldb.so.1 libleveldb.so
 step 8 : sudo ldconfig
+
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/leveldb/">Read more</a>
+    </footer>
+  
+</div>
+
+        </article>
         
-        ...<a class="button is-link" href="https://zyx-vec.github.io/myblog/post/leveldb/" style="height:28px">
-          Read more
-          <span class="icon is-small">
-            <i class="fa fa-angle-double-right"></i>
-          </span>
-        </a>
-        
-      </div>
-    </article>
-    
-    <article>
-      <h2 class="subtitle is-6">October 15, 2016</h2>
-      <h1 class="title"><a href="https://zyx-vec.github.io/myblog/post/is_constructible/">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</a></h1>
-      <div class="content">
-        is_convertible和 is_constructible是否等价
+        <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/is_constructible/">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</a></h2>
+<div>
+  
+    is_convertible和 is_constructible是否等价
 C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。
 is_convertible 和 is_constructible 就是 type_traits 中的两个 meta function；光听名字感觉他们两者应该功能应该是差不多的，确实，但是本文探讨的是两者的区别，和 type interface 的主要问题；注意两 meta function 之间参数的顺序，如标题所示，当 T 能从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的；反过来呢？答案也是否定的。这就是 C++ 的“神奇”之处，细节性的东西太多了！
 将上面这段话转换成代码，就是
 T t(u);	// OK T t = u; // ??? T t = u;	// OK T t(u);	// ???  按照常识，T t(u) 应该比 T t = u 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以调用 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！
-        
-        ...<a class="button is-link" href="https://zyx-vec.github.io/myblog/post/is_constructible/" style="height:28px">
-          Read more
-          <span class="icon is-small">
-            <i class="fa fa-angle-double-right"></i>
-          </span>
-        </a>
-        
-      </div>
-    </article>
-    
-    <article>
-      <h2 class="subtitle is-6">October 11, 2016</h2>
-      <h1 class="title"><a href="https://zyx-vec.github.io/myblog/post/devirtualization/">C&#43;&#43;中的devirtualization</a></h1>
-      <div class="content">
-        我们都知道 C++ 中通过对象中的 vptr 指向 vtable 来实现多态，当然只有指针和引用才能表现出多态，否则的话会发生 slicing，调用构造或者拷贝构造函数，进而重新设置虚表指针 vptr 就不能实现多态。
-但 devirtualization 是什么？解虚拟？从字面中我们也能看出，它表面上是虚函数调用，但实际进行的确是 static 的调用，也即编译器将虚函数的调用在编译期就进行了决议（resolution），消除了常规虚函数调用的动作，因为虚函数在运行时调用会经过多次的 indirection ，性能上会有影响，常规虚函数调用会多出几次内存访问，无论对于指令的条数，还是内存访问中的 Cache 局部性都会对性能造成一定的影响。较新版的编译器能够通过 C++11 中的关键词来进行指导 devirtualization ，这个关键词就是 final，因为虚函数中的 override 可以通过 final 来指定终止继续对该虚函数的 override，所以当传递过来的对象指针调用其所在 scope 中的虚函数时，碰巧该虚函数有 final 关键词的修饰，那么编译器就可以断定其一定是调用该类型指针内部的对应的那个虚函数。
-我们可以测试一下代码来看一看 devirtualization 到底表现出来是什么
-#include &lt;iostream&gt; class Base { public: virtual int value() { return 0; } }; class Derived : public Base { public: int value() final { return 1; }	// final is as an indicator to compiler }; int foo(Derived* d) { return d-&gt;value() + 13; } int main() { Derived d; int i = foo(&amp;d); return 0; }  利用指令 g++ test.
-        
-        ...<a class="button is-link" href="https://zyx-vec.github.io/myblog/post/devirtualization/" style="height:28px">
-          Read more
-          <span class="icon is-small">
-            <i class="fa fa-angle-double-right"></i>
-          </span>
-        </a>
-        
-      </div>
-    </article>
-    
-    <article>
-      <h2 class="subtitle is-6">October 11, 2016</h2>
-      <h1 class="title"><a href="https://zyx-vec.github.io/myblog/post/gdb-commands/">gdb 基本命令</a></h1>
-      <div class="content">
-        GDB 是什么？   GDB 是强大的调试工具，属于 GNU tool chain 中的工具之一，功能能强大，常用语调试C和C++程序；不仅仅支持C/C++，还可用于调试Objective-C/Ada/Pascal程序；常用的功能包括设断点、查看源代码、查看变量的值、监测变量的值、查看内存中的内容和单步调试等等。GDB 功能强大，它能做的事也是纷繁复杂，感兴趣可以查看其官方提供的文档，真是洋洋洒洒近八百多页！
-官方文档：gdb官方文档
-但是常见功能并不是很多，掌握一些常用的命令，需要时再去查看文档即可。
- GDB 中常用的命令
- 运行 gdb 调试器   $ gcc src.c -o a.out -g：其中-g必须加上，不然的话就缺少调试所需要的信息
-$ gdb a.out
- 查看源代码   list ：用于查看当前位置（根据上一次list到哪里来算）起始的10行代码，简写为 l
-list linenum：查看指定行之后的10行源代码
-list function：用于查看指定函数的源代码
- 断点   break linenum：在指定的行位置处设一个断点，简写为 b
-info breakpoints：查看当前所有断点的信息，其中断点的信息包含
-info break n：查看标号为 n 的断点的信息
-clear：删除指定 frame 中的所有断点
-clear location：删除指定位置的断点
-disable [range...]：消除指定范围的断点的效果
-enable [range...]：使能指定范围的断点的效果
- 查看变量值   print var：用于查看指定变量的内容，简写为 p var
-        
-        ...<a class="button is-link" href="https://zyx-vec.github.io/myblog/post/gdb-commands/" style="height:28px">
-          Read more
-          <span class="icon is-small">
-            <i class="fa fa-angle-double-right"></i>
-          </span>
-        </a>
-        
-      </div>
-    </article>
-    
-    <article>
-      <h2 class="subtitle is-6">October 11, 2016</h2>
-      <h1 class="title"><a href="https://zyx-vec.github.io/myblog/post/static-assert/">断言assert的实现</a></h1>
-      <div class="content">
-        在C和C++语言中断言对于程序开发人员来说，具有很重要的作用。断言的作用就是要求 assert(e) 中的表达式 e 的值必须为真 true，否则的话程序就会 crash 掉，这就可以观察程序开发的过程中某一条件是否满足，或者用户输入的条件是否符合，当然 crash 掉运行的程序是很激进的做法，但也不失为一种有用的方式。
-本文描述两种 assert 的实现，一种为 compile time （编译时），另一种为 runtime （运行时）。
-两种实现方式都很 hack，运用了一些编译器或者运行时的某些特性。compile time 的实现方式就是利用了 C 语言中结构 struct 中的 bit filed 必须是大于等于 &gt;= 0 的，否则就出现编译错误，而C++中就利用类型特化来实现，具体看下文；runtime 的实现很常规了，如果 assert(e) 中 e 为 false，那么调用 abort 退出程序即可，当然可以让断言的输出更加详细一些，例如输出所在文件名、行数、函数名和断言失败的表达式的名称等。
- compile time assert   C 中的实现方法，利用 struct 中的 bit filed 必须大于等于 0 的特点，其中要用 sizeof 将struct 包裹起来，类似于宏中经常用到的 do { // codes goes here } while(0)。
-#include &lt;stdio.h&gt; #include &lt;stdlib.h&gt; #define static_assert(e) (sizeof(struct { int : -!
-        
-        ...<a class="button is-link" href="https://zyx-vec.github.io/myblog/post/static-assert/" style="height:28px">
-          Read more
-          <span class="icon is-small">
-            <i class="fa fa-angle-double-right"></i>
-          </span>
-        </a>
-        
-      </div>
-    </article>
-    
-  </div>
-</section>
-<section class="section">
-  <div class="container">
-    <nav class="level is-mobile">
-      <div class="level-left">
-        <div class="level-item">
-          
-          <a class="button is-disabled">
-            <span class="icon is-small is-marginless">
-              <i class="fa fa-angle-left"></i>
-            </span>
-            Newer
-          </a>
-          
-        </div>
-      </div>
-      <div class="level-right is-marginless">
-        <div class="level-item">
-          
-          <a class="button is-disabled">
-            Older
-            <span class="icon is-small is-marginless">
-              <i class="fa fa-angle-right"></i>
-            </span>
-          </a>
-          
-        </div>
-      </div>
-    </nav>
-  </div>
-</section>
 
-<section class="section">
-  <div class="container has-text-centered">
-    <p></p>
-  </div>
-</section>
-<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/is_constructible/">Read more</a>
+    </footer>
+  
+</div>
 
+        </article>
+        
+
+      </section>
+
+      <nav class="site-nav">
+  <a href="https://zyx-vec.github.io/myblog/">Home</a>
+  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  
+
+    
+
+</nav>
+
+
+      <footer class="site-footer">
+  <span class="owner">©2016 tldr</span>
+
+  
+</footer>
+
+
+    </div>
+
+  
+<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
 <script>hljs.initHighlightingOnLoad();</script>
 
-
+  </body>
+</html>
