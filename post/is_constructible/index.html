@@ -1,40 +1,35 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt; | TL;DR BLOG</title>
+<link rel="stylesheet" href="https://zyx-vec.github.io/myblog//css/style.css">
+<link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css">
 
-  
-<head>
-  <meta charset="utf-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="author" content="">
-  <meta name="generator" content="Hugo 0.17" />
-  <title>is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt; — TL;DR BLOG</title>
-
-  <meta name="description" content="">
-  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/is_constructible/">
-  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
-  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
-  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
-</head>
+<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/styles/default.min.css">
 
 
-  <body>
-    <div class="container">
+<section class="section">
+  <div class="container">
+    <nav class="nav">
+      <div class="nav-left">
+        <a class="nav-item" href="https://zyx-vec.github.io/myblog/"><h1 class="title is-4">TL;DR BLOG</h1></a>
+      </div>
+      <div class="nav-right">
+        <nav class="nav-item level is-mobile">
+          
+        </nav>
+      </div>
+    </nav>
+  </div>
+</section>
 
-      <header>
-  <h1>is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</h1>
-
-  
-  <time datetime="2016-10-15 23:02:11 &#43;0800 CST">2016/10/15</time>
-  
-
-  
-</header>
-
-
-      <article>
-        <p><strong>is_convertible<U, T> 和 is_constructible<T, U> 是否等价</strong></p>
+<section class="section">
+  <div class="container">
+    <h2 class="subtitle is-6">October 15, 2016</h2>
+    <h1 class="title">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</h1>
+    <div class="content">
+      <p><strong>is_convertible<U, T> 和 is_constructible<T, U> 是否等价</strong></p>
 
 <p>C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。</p>
 
@@ -128,30 +123,18 @@ int main() {
 
 <p>从上述的分析可知，<code>is_constructible</code> 和 <code>is_convertible</code> 之间是有区别的，其中关键词 <code>explicit</code> 就将这种区别表现出来了。因为 <code>is_convertible</code> 可能涉及到隐式转换，但是 <code>explicit</code> 却阻止了这种隐式转化你的存在，改变重载决议的选择，所以就表现出了和 <code>is_constructible</code> 不同的结果。</p>
 
-      </article>
-
-      <nav class="site-nav">
-  <a href="https://zyx-vec.github.io/myblog/">Home</a>
-  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
-
-  
-
-</nav>
-
-
-      <footer class="site-footer">
-  <span class="owner">©2016 </span>
-
-  
-</footer>
-
-
     </div>
+  </div>
+</section>
 
-  
-<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
+
+<section class="section">
+  <div class="container has-text-centered">
+    <p></p>
+  </div>
+</section>
+<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.6.0/highlight.min.js"></script>
+
 <script>hljs.initHighlightingOnLoad();</script>
 
 
-  </body>
-</html>

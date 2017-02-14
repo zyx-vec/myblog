@@ -2,11 +2,6 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   
   <url>
-    <loc>https://zyx-vec.github.io/myblog/</loc>
-    <lastmod>2016-11-06T20:57:19+08:00</lastmod>
-  </url>
-  
-  <url>
     <loc>https://zyx-vec.github.io/myblog/post/CPP_Object_Model/</loc>
     <lastmod>2016-11-06T20:57:19+08:00</lastmod>
   </url>
@@ -34,6 +29,18 @@
   <url>
     <loc>https://zyx-vec.github.io/myblog/post/static-assert/</loc>
     <lastmod>2016-10-11T15:25:05+08:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://zyx-vec.github.io/myblog/post/</loc>
+    <lastmod>2016-11-06T20:57:19+08:00</lastmod>
+    <priority>0</priority>
+  </url>
+  
+  <url>
+    <loc>https://zyx-vec.github.io/myblog/</loc>
+    <lastmod>2016-11-06T20:57:19+08:00</lastmod>
+    <priority>0</priority>
   </url>
   
 </urlset>
