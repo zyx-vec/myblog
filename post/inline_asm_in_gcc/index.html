@@ -36,7 +36,7 @@
       <article>
         <p><strong>C/C++ 代码中嵌入汇编</strong></p>
 
-<p>如果阅读过Linux源码，就可以发现其中的C中嵌入汇编指令；众所周知汇编生产力极低，但是汇编指令写出的程序的性能却是极高的，可以能够榨干CPU的计算能力。本文通过例子的方式给出在GCC中的C/C++（两个语言规则一样，下文直接用C来描述）代码中嵌入汇编代码块的一些基本规则。</p>
+<p>如果阅读过Linux源码，就可以发现其中的C中嵌入汇编指令；众所周知汇编生产力极低，但是汇编指令写出的程序的性能却是极高的，能够榨干CPU的计算能力。本文通过例子的方式给出在GCC中的C/C++（两个语言规则一样，下文直接用C来描述）代码中嵌入汇编代码块的一些基本规则。</p>
 
 <p><strong>基本模板</strong></p>
 
@@ -92,7 +92,7 @@ int main(int argc, char** argv) {
 
 <p>上述代码编译之后反汇编之后可以看到如下代码段，可以看到嵌入的汇编指令（编译时没开优化）：</p>
 
-<pre><code class="language-assembly">&lt;main&gt;:
+<pre><code class="language-c">&lt;main&gt;:
 55                   	push   %rbp
 48 89 e5             	mov    %rsp,%rbp
 48 83 ec 30          	sub    $0x30,%rsp
@@ -124,14 +124,11 @@ c3                   	retq
 
 <p>例如 <code>__asm__(&quot;movl %%eax,%0\n\t&quot; :&quot;=r&quot;(var))</code> 中 <code>r</code> 表示用通用寄存器来持有输出的值。处理<code>&quot;=r&quot;</code>还有许多的寄存器操作数(operand)限制。</p>
 
-<p>| r    | Registers      |
-  | &mdash;- | &mdash;&mdash;&mdash;&mdash;&ndash; |
-  | a    | %eax, %ax, %al |
-  | b    | %ebx, %bx, %bl |
-  | c    | %ecx, %cx, %cl |
-  | d    | %edx, %dx, %dl |
-  | S    | %esi, %si      |
-  | D    | %edi, %di      |</p>
+<p>r (general registers)</p>
+
+<p>a(%eax, %ax, %al) b(%ebx, %bx, %bl) c(%ecx, %cx, %cl) d(%edx, %dx, %dl)</p>
+
+<p>S(%esi, %si) D(%edi, %di)</p>
 
 <ul>
 <li>内存操作数的限制</li>
@@ -145,7 +142,7 @@ c3                   	retq
 
 <p>有时候变量即充当输入，又是输出，为了方便就可以使用数字匹配的方式来简化代码的生成；例如 <code>__asm__(&quot;incl %0&quot; :&quot;=a&quot;(i):&quot;0&quot;(i))</code> 这里的 <code>&quot;0&quot;</code> 就是引用第0个操作数使用的寄存器。效果就是，首先 %eax 中持有i的值，然后将其加1，最后写入到i中，完成加1的操作。</p>
 
-<pre><code class="language-assembly">  c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
+<pre><code class="language-c">  c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
   8b 45 f8             	mov    -0x8(%rbp),%eax
   ff c0                	inc    %eax
   89 45 f8             	mov    %eax,-0x8(%rbp)
@@ -187,7 +184,7 @@ c3                   	retq
 
 <p>Linux 内核中利用宏来生成各个系统调用的函数代码，位于<code>unistd.h</code>中，例如：</p>
 
-<pre><code class="language-assembly">  #define _syscall1(type,name,atype,a) \
+<pre><code class="language-c">  #define _syscall1(type,name,atype,a) \
   type name(atype a) \
   { \
   long __res; \

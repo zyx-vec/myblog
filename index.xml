@@ -17,7 +17,7 @@
       <guid>https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/</guid>
       <description>&lt;p&gt;&lt;strong&gt;C/C++ 代码中嵌入汇编&lt;/strong&gt;&lt;/p&gt;
 
-&lt;p&gt;如果阅读过Linux源码，就可以发现其中的C中嵌入汇编指令；众所周知汇编生产力极低，但是汇编指令写出的程序的性能却是极高的，可以能够榨干CPU的计算能力。本文通过例子的方式给出在GCC中的C/C++（两个语言规则一样，下文直接用C来描述）代码中嵌入汇编代码块的一些基本规则。&lt;/p&gt;
+&lt;p&gt;如果阅读过Linux源码，就可以发现其中的C中嵌入汇编指令；众所周知汇编生产力极低，但是汇编指令写出的程序的性能却是极高的，能够榨干CPU的计算能力。本文通过例子的方式给出在GCC中的C/C++（两个语言规则一样，下文直接用C来描述）代码中嵌入汇编代码块的一些基本规则。&lt;/p&gt;
 
 &lt;p&gt;&lt;strong&gt;基本模板&lt;/strong&gt;&lt;/p&gt;
 
@@ -73,7 +73,7 @@ int main(int argc, char** argv) {
 
 &lt;p&gt;上述代码编译之后反汇编之后可以看到如下代码段，可以看到嵌入的汇编指令（编译时没开优化）：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-assembly&#34;&gt;&amp;lt;main&amp;gt;:
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;&amp;lt;main&amp;gt;:
 55                   	push   %rbp
 48 89 e5             	mov    %rsp,%rbp
 48 83 ec 30          	sub    $0x30,%rsp
@@ -105,14 +105,11 @@ c3                   	retq
 
 &lt;p&gt;例如 &lt;code&gt;__asm__(&amp;quot;movl %%eax,%0\n\t&amp;quot; :&amp;quot;=r&amp;quot;(var))&lt;/code&gt; 中 &lt;code&gt;r&lt;/code&gt; 表示用通用寄存器来持有输出的值。处理&lt;code&gt;&amp;quot;=r&amp;quot;&lt;/code&gt;还有许多的寄存器操作数(operand)限制。&lt;/p&gt;
 
-&lt;p&gt;| r    | Registers      |
-  | &amp;mdash;- | &amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash; |
-  | a    | %eax, %ax, %al |
-  | b    | %ebx, %bx, %bl |
-  | c    | %ecx, %cx, %cl |
-  | d    | %edx, %dx, %dl |
-  | S    | %esi, %si      |
-  | D    | %edi, %di      |&lt;/p&gt;
+&lt;p&gt;r (general registers)&lt;/p&gt;
+
+&lt;p&gt;a(%eax, %ax, %al) b(%ebx, %bx, %bl) c(%ecx, %cx, %cl) d(%edx, %dx, %dl)&lt;/p&gt;
+
+&lt;p&gt;S(%esi, %si) D(%edi, %di)&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;内存操作数的限制&lt;/li&gt;
@@ -126,7 +123,7 @@ c3                   	retq
 
 &lt;p&gt;有时候变量即充当输入，又是输出，为了方便就可以使用数字匹配的方式来简化代码的生成；例如 &lt;code&gt;__asm__(&amp;quot;incl %0&amp;quot; :&amp;quot;=a&amp;quot;(i):&amp;quot;0&amp;quot;(i))&lt;/code&gt; 这里的 &lt;code&gt;&amp;quot;0&amp;quot;&lt;/code&gt; 就是引用第0个操作数使用的寄存器。效果就是，首先 %eax 中持有i的值，然后将其加1，最后写入到i中，完成加1的操作。&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-assembly&#34;&gt;  c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
   8b 45 f8             	mov    -0x8(%rbp),%eax
   ff c0                	inc    %eax
   89 45 f8             	mov    %eax,-0x8(%rbp)
@@ -168,7 +165,7 @@ c3                   	retq
 
 &lt;p&gt;Linux 内核中利用宏来生成各个系统调用的函数代码，位于&lt;code&gt;unistd.h&lt;/code&gt;中，例如：&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-assembly&#34;&gt;  #define _syscall1(type,name,atype,a) \
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  #define _syscall1(type,name,atype,a) \
   type name(atype a) \
   { \
   long __res; \
