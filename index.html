@@ -35,6 +35,26 @@
 
         
         <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/">在 C 中内嵌汇编代码</a></h2>
+<div>
+  
+    C/C++ 代码中嵌入汇编
+如果阅读过Linux源码，就可以发现其中的C中嵌入汇编指令；众所周知汇编生产力极低，但是汇编指令写出的程序的性能却是极高的，可以能够榨干CPU的计算能力。本文通过例子的方式给出在GCC中的C/C++（两个语言规则一样，下文直接用C来描述）代码中嵌入汇编代码块的一些基本规则。
+基本模板
+__asm__(&quot;inst0\n\t&quot;	/* basic instructions */ &quot;inst1\n\t&quot; :&quot;=?&quot;(),&quot;=?&quot;()...	/* outputs */ :&quot;?&quot;(),&quot;?&quot;()...	/* inputs */ :&quot;?&quot;...);	/* clobbered registers */ // 其中__asm__和asm是等价的，可以相互替换。  上面就是C源程序中嵌入汇编指令的基本模板。可见模板由5部分组成：
+ 基本框架 __asm__(); 在括号中填入汇编指令和其他上下文信息。 汇编指令部分，位于括号的前面部分，上述模板中inst0 inst1..就是汇编指令的代指。 由于嵌入的汇编代码块有一个上下文的环境，所以就需要接下来的三个:起始的限制（constraints）信息。  第一个 : 用于指定输出的变量由哪个寄存器来持有输出结果，&quot;&quot; 用于指定寄存器，() 中写变量名。 第二个 : 用于指定输入的变量由哪个寄存器来持有输入内容，&quot;&quot; 用于指定寄存器，() 中写变量名。 第三个 : 用于告诉编译器这个代码块中哪些内容是会被修改的，比如 :&quot;%eax&quot; 表示代码块中会修改寄存器%eax的值。   由于三个 : 不是必需的，有时能够看到例如 :::&quot;m&quot; 的内容，这就表示输出和输入都没有，但是这个代码块会修改内存中的内容（&quot;m&quot;表示内存）。
+简单示例
+#include &lt;stdio.h&gt; int main(int argc, char** argv) { int a = 10, b; __asm__(&quot;movl %1, %%eax\n\t&quot; &quot;movl %%eax, %0\n\t&quot; :&quot;=r&quot;(b)	/* output */ :&quot;r&quot; (a)	/* input */ :&quot;%eax&quot;	/* clobbered register */ ); printf(&quot;Result %d\n&quot;, b); return 0; }  上述 __asm__() 中代码的作用是将变量a中的值拷贝到变量b中。
+
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/">Read more</a>
+    </footer>
+  
+</div>
+
+        </article>
+        
+        <article>
           <h2><a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">探讨C&#43;&#43; 对象模型</a></h2>
 <div>
   
@@ -72,24 +92,6 @@ step 8 : sudo ldconfig
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/leveldb/">Read more</a>
-    </footer>
-  
-</div>
-
-        </article>
-        
-        <article>
-          <h2><a href="https://zyx-vec.github.io/myblog/post/is_constructible/">is_convertible&lt;U, T&gt; 和 is_constructible&lt;T, U&gt;</a></h2>
-<div>
-  
-    is_convertible和 is_constructible是否等价
-C++ 11 中引入了强大的 type_traits，顾名思义，它增强了 C++ 的类型系统，使得泛型程序设计变得更加的强大；当然目前正在标准讨论中的 Concepts 将会让 C++ 的 template 变得更加“合理”，就像是给C++ template 中的类型参数加上了一层类型约束系统，让写 C++ 的泛型程序不会那么“飘”。
-is_convertible 和 is_constructible 就是 type_traits 中的两个 meta function；光听名字感觉他们两者应该功能应该是差不多的，确实，但是本文探讨的是两者的区别，和 type interface 的主要问题；注意两 meta function 之间参数的顺序，如标题所示，当 T 能从 U 构造来时，也应当能从 U 转换成 T？真的是这样的吗？答案是否定的；反过来呢？答案也是否定的。这就是 C++ 的“神奇”之处，细节性的东西太多了！
-将上面这段话转换成代码，就是
-T t(u);	// OK T t = u; // ??? T t = u;	// OK T t(u);	// ???  按照常识，T t(u) 应该比 T t = u 更强，因为 t(u) 会考虑更多的可能情况，可以是直接构造，还可以调用 explicit 显式构造，也可能有 conversion 操作的存在。所以按常理是 t(u) 更强。但情况并不总是如此！
-
-    <footer>
-      <a href="https://zyx-vec.github.io/myblog/post/is_constructible/">Read more</a>
     </footer>
   
 </div>

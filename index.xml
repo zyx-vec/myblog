@@ -6,8 +6,189 @@
     <description>Recent content on TL;DR BLOG</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Sun, 06 Nov 2016 20:57:19 +0800</lastBuildDate>
+    <lastBuildDate>Tue, 14 Feb 2017 15:51:46 +0800</lastBuildDate>
     <atom:link href="https://zyx-vec.github.io/myblog/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>在 C 中内嵌汇编代码</title>
+      <link>https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/</link>
+      <pubDate>Tue, 14 Feb 2017 15:51:46 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;C/C++ 代码中嵌入汇编&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如果阅读过Linux源码，就可以发现其中的C中嵌入汇编指令；众所周知汇编生产力极低，但是汇编指令写出的程序的性能却是极高的，可以能够榨干CPU的计算能力。本文通过例子的方式给出在GCC中的C/C++（两个语言规则一样，下文直接用C来描述）代码中嵌入汇编代码块的一些基本规则。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;基本模板&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;__asm__(&amp;quot;inst0\n\t&amp;quot;			/* basic instructions */
+        &amp;quot;inst1\n\t&amp;quot;
+        :&amp;quot;=?&amp;quot;(),&amp;quot;=?&amp;quot;()...	/* outputs */
+        :&amp;quot;?&amp;quot;(),&amp;quot;?&amp;quot;()...		/* inputs */
+        :&amp;quot;?&amp;quot;...);			/* clobbered registers */
+// 其中__asm__和asm是等价的，可以相互替换。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上面就是C源程序中嵌入汇编指令的基本模板。可见模板由5部分组成：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;基本框架 &lt;code&gt;__asm__();&lt;/code&gt; 在括号中填入汇编指令和其他上下文信息。&lt;/li&gt;
+&lt;li&gt;汇编指令部分，位于括号的前面部分，上述模板中&lt;code&gt;inst0 inst1..&lt;/code&gt;就是汇编指令的代指。&lt;/li&gt;
+&lt;li&gt;由于嵌入的汇编代码块有一个&lt;strong&gt;上下文的环境&lt;/strong&gt;，所以就需要接下来的三个&lt;code&gt;:&lt;/code&gt;起始的限制（constraints）信息。
+
+&lt;ol&gt;
+&lt;li&gt;第一个 &lt;code&gt;:&lt;/code&gt; 用于指定输出的变量由哪个寄存器来&lt;strong&gt;持有输出结果&lt;/strong&gt;，&lt;code&gt;&amp;quot;&amp;quot;&lt;/code&gt; 用于指定寄存器，&lt;code&gt;()&lt;/code&gt; 中写变量名。&lt;/li&gt;
+&lt;li&gt;第二个 &lt;code&gt;:&lt;/code&gt; 用于指定输入的变量由哪个寄存器来&lt;strong&gt;持有输入内容&lt;/strong&gt;，&lt;code&gt;&amp;quot;&amp;quot;&lt;/code&gt; 用于指定寄存器，&lt;code&gt;()&lt;/code&gt; 中写变量名。&lt;/li&gt;
+&lt;li&gt;第三个 &lt;code&gt;:&lt;/code&gt; 用于告诉编译器这个代码块中&lt;strong&gt;哪些内容是会被修改的&lt;/strong&gt;，比如 &lt;code&gt;:&amp;quot;%eax&amp;quot;&lt;/code&gt; 表示代码块中会修改寄存器%eax的值。&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;由于三个 &lt;code&gt;:&lt;/code&gt; 不是必需的，有时能够看到例如 &lt;code&gt;:::&amp;quot;m&amp;quot;&lt;/code&gt; 的内容，这就表示输出和输入都没有，但是这个代码块会修改内存中的内容（&lt;code&gt;&amp;quot;m&amp;quot;&lt;/code&gt;表示内存）。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;简单示例&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;#include &amp;lt;stdio.h&amp;gt;
+int main(int argc, char** argv) {
+	int a = 10, b;
+	__asm__(&amp;quot;movl %1, %%eax\n\t&amp;quot;
+			&amp;quot;movl %%eax, %0\n\t&amp;quot;
+			:&amp;quot;=r&amp;quot;(b)	/* output */
+			:&amp;quot;r&amp;quot; (a)	/* input */
+			:&amp;quot;%eax&amp;quot;		/* clobbered register */
+	);
+	printf(&amp;quot;Result %d\n&amp;quot;, b);
+	return 0;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上述 &lt;code&gt;__asm__()&lt;/code&gt; 中代码的作用是将变量a中的值拷贝到变量b中。&lt;/p&gt;
+
+&lt;p&gt;由于汇编指令处于C的上下文中，为了让编译器能够区分输入输出的引用和寄存器的使用的区别，输入输出的引用由单个&lt;code&gt;%n&lt;/code&gt;表示，其中n表示&lt;code&gt;:::&lt;/code&gt;中括号内变量的编号（从0开始，例如上述中 %0 就是应用变量 b），而寄存器的使用由两个&lt;code&gt;%%reg&lt;/code&gt;表示；统一起来就是要有一个起始的&lt;code&gt;%&lt;/code&gt;，输入输出用数字标号表示，寄存器由常规的&lt;code&gt;%reg&lt;/code&gt;表示。&lt;/p&gt;
+
+&lt;p&gt;接下来的 &lt;code&gt;:&amp;quot;=r&amp;quot;(b)&lt;/code&gt; 表示输出到b中，其中&lt;code&gt;=?&lt;/code&gt;中的&lt;code&gt;=&lt;/code&gt;号是必需的，用于区分输入。&lt;code&gt;r&lt;/code&gt;表示用通用寄存器（general register）来持有输出的结果，然后写入到变量b中。但是并不是只有&lt;code&gt;r&lt;/code&gt;可选，还有其他的字母用于表示其他的寄存器，下文会给出。&lt;/p&gt;
+
+&lt;p&gt;第二个 &lt;code&gt;:&amp;quot;r&amp;quot;(a)&lt;/code&gt; 表示输入的内容位于变量a中，由通用寄存器持有，可见这里的只是&lt;code&gt;&amp;quot;r&amp;quot;&lt;/code&gt;，而没有等号，这就是输入与输出的不同，同样的还有除了&lt;code&gt;r&lt;/code&gt;之外的其他字母选项用于指定其他的寄存器来持有输入的变量值。&lt;/p&gt;
+
+&lt;p&gt;最后一个 &lt;code&gt;:%eax&lt;/code&gt; 表示在这个汇编代码指令块中寄存器%eax的值是会被修改的，请不要依赖它们在汇编指令块之前所持有的内容。&lt;/p&gt;
+
+&lt;p&gt;上述代码编译之后反汇编之后可以看到如下代码段，可以看到嵌入的汇编指令（编译时没开优化）：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-assembly&#34;&gt;&amp;lt;main&amp;gt;:
+55                   	push   %rbp
+48 89 e5             	mov    %rsp,%rbp
+48 83 ec 30          	sub    $0x30,%rsp
+89 4d 10             	mov    %ecx,0x10(%rbp)
+48 89 55 18          	mov    %rdx,0x18(%rbp)
+e8 4c 00 00 00       	callq  100401140 &amp;lt;__main&amp;gt;
+c7 45 fc 0a 00 00 00 	movl   $0xa,-0x4(%rbp)	# a = 10
+8b 55 fc             	mov    -0x4(%rbp),%edx	# 取出 a 中的值
+89 d0                	mov    %edx,%eax	# 将持有的值转入寄存器 %eax 中
+89 c2                	mov    %eax,%edx	# 将持有的值转入寄存器 %ebx 中
+89 55 f8             	mov    %edx,-0x8(%rbp)	# 将值写入到变量 b 中
+8b 45 f8             	mov    -0x8(%rbp),%eax	# 接下来调用 printf 函数
+89 c2                	mov    %eax,%edx
+48 8d 0d 1f 1f 00 00 	lea    0x1f1f(%rip),%rcx        # 100403030 &amp;lt;.rdata&amp;gt;
+e8 3a 00 00 00       	callq  100401150 &amp;lt;printf&amp;gt;
+b8 00 00 00 00       	mov    $0x0,%eax
+48 83 c4 30          	add    $0x30,%rsp
+5d                   	pop    %rbp
+c3                   	retq
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;从反汇编出来的汇编指令中可以看出 &lt;code&gt;movl %1 %%eax&lt;/code&gt; 而 &lt;code&gt;%1&lt;/code&gt; 已经由 &lt;code&gt;:&amp;quot;r&amp;quot;(a)&lt;/code&gt; 指定，所以面的汇编代码中出现了 &lt;code&gt;mov -0x4(%rbp),%edx 和 mov  %edx,%eax&lt;/code&gt; 两条指令，因为 &lt;code&gt;movl %1,%%eax&lt;/code&gt; 被翻译成了用 %edx 来持有a的值；同理 &lt;code&gt;movl %%eax, %0&lt;/code&gt; 翻译成了两条指令 &lt;code&gt;mov %eax, %edx 和 mov %edx, -0x8(%rbp)&lt;/code&gt;，由%edx来持有最终待输出到变量b中的值。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;常用的限制（Constraints）&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;寄存器操作数的限制&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;例如 &lt;code&gt;__asm__(&amp;quot;movl %%eax,%0\n\t&amp;quot; :&amp;quot;=r&amp;quot;(var))&lt;/code&gt; 中 &lt;code&gt;r&lt;/code&gt; 表示用通用寄存器来持有输出的值。处理&lt;code&gt;&amp;quot;=r&amp;quot;&lt;/code&gt;还有许多的寄存器操作数(operand)限制。&lt;/p&gt;
+
+&lt;p&gt;| r    | Registers      |
+  | &amp;mdash;- | &amp;mdash;&amp;mdash;&amp;mdash;&amp;mdash;&amp;ndash; |
+  | a    | %eax, %ax, %al |
+  | b    | %ebx, %bx, %bl |
+  | c    | %ecx, %cx, %cl |
+  | d    | %edx, %dx, %dl |
+  | S    | %esi, %si      |
+  | D    | %edi, %di      |&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;内存操作数的限制&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;有些汇编指令可以直接用内存作为操作数，所以 &lt;code&gt;:&amp;quot;m&amp;quot;(var)&lt;/code&gt; 就用来表示内存var的引用，例如 &lt;code&gt;__asm__(&amp;quot;mov $13,%0\n\t&amp;quot; :&amp;quot;=m&amp;quot;(var))&lt;/code&gt; 就表示将变量var的值改写为13。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;匹配限制&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;有时候变量即充当输入，又是输出，为了方便就可以使用数字匹配的方式来简化代码的生成；例如 &lt;code&gt;__asm__(&amp;quot;incl %0&amp;quot; :&amp;quot;=a&amp;quot;(i):&amp;quot;0&amp;quot;(i))&lt;/code&gt; 这里的 &lt;code&gt;&amp;quot;0&amp;quot;&lt;/code&gt; 就是引用第0个操作数使用的寄存器。效果就是，首先 %eax 中持有i的值，然后将其加1，最后写入到i中，完成加1的操作。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-assembly&#34;&gt;  c7 45 f8 00 00 00 00 	movl   $0x0,-0x8(%rbp)
+  8b 45 f8             	mov    -0x8(%rbp),%eax
+  ff c0                	inc    %eax
+  89 45 f8             	mov    %eax,-0x8(%rbp)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ul&gt;
+&lt;li&gt;限制描述符
+
+&lt;ol&gt;
+&lt;li&gt;如前所述&lt;code&gt;=&lt;/code&gt;用于描述限制输出。&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;&amp;amp;&lt;/code&gt;用于限制描述：操作数在&lt;code&gt;__asm__()&lt;/code&gt;代码块完成之前就会被修改，告知编译器进行一些处理。&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;strong&gt;例子&lt;/strong&gt;&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;strcpy 函数的实现&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  static inline char * strcpy_a(char * dest, const char * src) {
+  	int d0, d1, d2;
+  	__asm__ volatile(&amp;quot;1:\tlodsb\n\t&amp;quot;
+  					&amp;quot;stosb\n\t&amp;quot;
+  					&amp;quot;testb %%al, %%al\n\t&amp;quot;
+  					&amp;quot;jne 1b&amp;quot;
+  					:&amp;quot;=&amp;amp;S&amp;quot;(d0), &amp;quot;=&amp;amp;D&amp;quot;(d1), &amp;quot;=&amp;amp;a&amp;quot;(d2)
+  					:&amp;quot;0&amp;quot;(src), &amp;quot;1&amp;quot;(dest)
+  					:&amp;quot;memory&amp;quot;);
+  	return dest;
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;首先将src保存在%esi(%rsi)中，dest保存在%edi(%rdi)中，同时利用=&amp;amp;来将最终值写入到内存单元中，&amp;amp;来表述&lt;code&gt;__asm__()&lt;/code&gt;过程中可变的概念。函数运行之后就开始拷贝，直到遇到&lt;code&gt;\0&lt;/code&gt;为止。&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Linux 内核中系统调用的实现&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;Linux 内核中利用宏来生成各个系统调用的函数代码，位于&lt;code&gt;unistd.h&lt;/code&gt;中，例如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-assembly&#34;&gt;  #define _syscall1(type,name,atype,a) \
+  type name(atype a) \
+  { \
+  long __res; \
+  __asm__ volatile (&amp;quot;int $0x80&amp;quot; \
+  	: &amp;quot;=a&amp;quot; (__res) \	/* 最终结果保存到 %eax 中，然后输出到变量 __res 中 */
+  	: &amp;quot;0&amp;quot; (__NR_##name),&amp;quot;b&amp;quot; ((long)(a))); \	/* %eax 中接收系统调用号，%ebx 中接受第一个参数 */
+  if (__res &amp;gt;= 0) \
+  	return (type) __res; \
+  errno = -__res; \
+  return -1; \
+  }
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;code&gt;: &amp;quot;=a&amp;quot; (_res)&lt;/code&gt; 和 &lt;code&gt;: &amp;quot;0&amp;quot; (__NR__##name),&amp;quot;b&amp;quot;((long)(a));&lt;/code&gt; 限制了寄存器的使用，和系统调用的标准做法一致，%eax 中传递 &lt;code&gt;__NR_##name&lt;/code&gt;，%ebx 中传递第一个参数。返回值保存在了%eax中，然后输出到&lt;code&gt;__res&lt;/code&gt;中，最后根据 &lt;code&gt;__res&lt;/code&gt;的值，返回结果。&lt;/p&gt;
+
+&lt;p&gt;其中 &lt;code&gt;__NR__##name&lt;/code&gt; 用于拼接字符串，生成例如 &lt;code&gt;__NR__exit&lt;/code&gt; 之类的宏名称，改值由内核代码定义，也位于&lt;code&gt;unistd.h&lt;/code&gt;头文件中。&lt;/p&gt;
+
+&lt;p&gt;补充一下 &lt;code&gt;volatile&lt;/code&gt; 关键词的作用是告诉编译其不要对这个汇编代码段进行一些优化（例如移动代码等操作）；&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>探讨C&#43;&#43; 对象模型</title>
