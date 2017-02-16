@@ -40,11 +40,11 @@
 
 <p><strong>基本模板</strong></p>
 
-<pre><code class="language-c">__asm__(&quot;inst0\n\t&quot;			/* basic instructions */
+<pre><code class="language-c">__asm__(&quot;inst0\n\t&quot;		/* basic instructions */
         &quot;inst1\n\t&quot;
         :&quot;=?&quot;(),&quot;=?&quot;()...	/* outputs */
         :&quot;?&quot;(),&quot;?&quot;()...		/* inputs */
-        :&quot;?&quot;...);			/* clobbered registers */
+        :&quot;?&quot;...);		/* clobbered registers */
 // 其中__asm__和asm是等价的，可以相互替换。
 </code></pre>
 
@@ -70,10 +70,10 @@
 int main(int argc, char** argv) {
 	int a = 10, b;
 	__asm__(&quot;movl %1, %%eax\n\t&quot;
-			&quot;movl %%eax, %0\n\t&quot;
-			:&quot;=r&quot;(b)	/* output */
-			:&quot;r&quot; (a)	/* input */
-			:&quot;%eax&quot;		/* clobbered register */
+		&quot;movl %%eax, %0\n\t&quot;
+		:&quot;=r&quot;(b)	/* output */
+		:&quot;r&quot; (a)	/* input */
+		:&quot;%eax&quot;		/* clobbered register */
 	);
 	printf(&quot;Result %d\n&quot;, b);
 	return 0;
@@ -166,12 +166,12 @@ c3                   	retq
 <pre><code class="language-c">  static inline char * strcpy_a(char * dest, const char * src) {
   	int d0, d1, d2;
   	__asm__ volatile(&quot;1:\tlodsb\n\t&quot;
-  				&quot;stosb\n\t&quot;
-  				&quot;testb %%al, %%al\n\t&quot;
-  				&quot;jne 1b&quot;
-  				:&quot;=&amp;S&quot;(d0), &quot;=&amp;D&quot;(d1), &quot;=&amp;a&quot;(d2)
-  				:&quot;0&quot;(src), &quot;1&quot;(dest)
-  				:&quot;memory&quot;);
+  			&quot;stosb\n\t&quot;
+  			&quot;testb %%al, %%al\n\t&quot;
+  			&quot;jne 1b&quot;
+  			:&quot;=&amp;S&quot;(d0), &quot;=&amp;D&quot;(d1), &quot;=&amp;a&quot;(d2)
+  			:&quot;0&quot;(src), &quot;1&quot;(dest)
+  			:&quot;memory&quot;);
   	return dest;
   }
 </code></pre>
