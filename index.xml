@@ -147,12 +147,12 @@ c3                   	retq
 &lt;pre&gt;&lt;code class=&#34;language-c&#34;&gt;  static inline char * strcpy_a(char * dest, const char * src) {
   	int d0, d1, d2;
   	__asm__ volatile(&amp;quot;1:\tlodsb\n\t&amp;quot;
-  					&amp;quot;stosb\n\t&amp;quot;
-  					&amp;quot;testb %%al, %%al\n\t&amp;quot;
-  					&amp;quot;jne 1b&amp;quot;
-  					:&amp;quot;=&amp;amp;S&amp;quot;(d0), &amp;quot;=&amp;amp;D&amp;quot;(d1), &amp;quot;=&amp;amp;a&amp;quot;(d2)
-  					:&amp;quot;0&amp;quot;(src), &amp;quot;1&amp;quot;(dest)
-  					:&amp;quot;memory&amp;quot;);
+  				&amp;quot;stosb\n\t&amp;quot;
+  				&amp;quot;testb %%al, %%al\n\t&amp;quot;
+  				&amp;quot;jne 1b&amp;quot;
+  				:&amp;quot;=&amp;amp;S&amp;quot;(d0), &amp;quot;=&amp;amp;D&amp;quot;(d1), &amp;quot;=&amp;amp;a&amp;quot;(d2)
+  				:&amp;quot;0&amp;quot;(src), &amp;quot;1&amp;quot;(dest)
+  				:&amp;quot;memory&amp;quot;);
   	return dest;
   }
 &lt;/code&gt;&lt;/pre&gt;

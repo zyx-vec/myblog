@@ -166,12 +166,12 @@ c3                   	retq
 <pre><code class="language-c">  static inline char * strcpy_a(char * dest, const char * src) {
   	int d0, d1, d2;
   	__asm__ volatile(&quot;1:\tlodsb\n\t&quot;
-  					&quot;stosb\n\t&quot;
-  					&quot;testb %%al, %%al\n\t&quot;
-  					&quot;jne 1b&quot;
-  					:&quot;=&amp;S&quot;(d0), &quot;=&amp;D&quot;(d1), &quot;=&amp;a&quot;(d2)
-  					:&quot;0&quot;(src), &quot;1&quot;(dest)
-  					:&quot;memory&quot;);
+  				&quot;stosb\n\t&quot;
+  				&quot;testb %%al, %%al\n\t&quot;
+  				&quot;jne 1b&quot;
+  				:&quot;=&amp;S&quot;(d0), &quot;=&amp;D&quot;(d1), &quot;=&amp;a&quot;(d2)
+  				:&quot;0&quot;(src), &quot;1&quot;(dest)
+  				:&quot;memory&quot;);
   	return dest;
   }
 </code></pre>
