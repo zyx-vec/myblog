@@ -35,6 +35,29 @@
 
         
         <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/is_singled_linked_list_cycle/">单链表环和相交问题</a></h2>
+<div>
+  
+    题目
+如何判断给定的一个单链表中是否存在环？找出环的起始位置？示例图如下，图中存在一个环，红色节点表示环的起点。
+思路
+利用快慢指针，一个指针1步每次，另一个指针2步每次，那么如果存在环的话，两个指针是一定会相遇的！为什么呢？
+现形象比喻指针p1速度为1步/s，p2的速度为2步/s，那么经过n秒之后，两指针之间的距离为：n 步 = 2*n - n；可见两指针之间拉开的距离是随着时间“连续”增长的，所以说：如果存在环那么他俩是一定会相遇的，但如果不存在环的话p2一定会先于p1到达终点，他俩不会相遇。
+但是如果存在环的话，如何求得环的起点呢？
+现假设扯住链表的起点，将其精密的“裹在”环的周边；由之前的分析可知他俩一定会相遇，现假设相遇点为A，从上图中易知相遇的A点一定是和链表的起点“重合”的，为什么？因为p1和p2相遇时一定是p2比p1多跑了x圈，这里x是多少不重要（x的值和紧密环绕的那一部分的长度相关）！这就好像是跑步，你的速度是旁边某人的2倍，当你俩相遇时，你继续以2倍于他的速度行进，那么下一时刻就是你去要“追他一圈”了（因为你比他快），又因为你俩之间的距离时连续增长的，所以追他一圈就会耗掉“他”跑1圈的时间，那么你俩相遇的点一定还会是刚才的哪个点。换个说法就是p1和p2从同一个起点出发，那么每次他俩相遇的点都会是紧密环绕之后重合的哪个点！
+如上图所示，两指针相遇点就在黑色的节点；当处于两值都处于相遇的黑色节点时，将p2拉回到蓝色的节点，然后两这同时以1步/s的速度行进，那么当他俩碰头时就是红色的节点，也就是环的起点。
+代码
+template &lt;typename T&gt; inline bool SingleLinkedList&lt;T&gt;::IsCycled() { bool ret; Node* p1, *p2; p1 = p2 = this-&gt;head; while(true) { p1 = p1-&gt;next_; // p1走一步 if(p2-&gt;next_ == NULL) { // p2更快，如果p2-&gt;next_ = NULL就表示没有环 ret = false; break; } else p2 = p2-&gt;next_-&gt;next_; // p2走两步 if(p1 == p2) { // 如果p1和p2相遇，那么表示有环 ret = true; break; } } if(ret) { // 如果有环，那么根据前面的分析，让p2回到链表头，和p1都以1步的速度前经，直到相遇 int i = 0; p2 = this-&gt;head; while(p1 !
+
+    <footer>
+      <a href="https://zyx-vec.github.io/myblog/post/is_singled_linked_list_cycle/">Read more</a>
+    </footer>
+  
+</div>
+
+        </article>
+        
+        <article>
           <h2><a href="https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/">在 C 中内嵌汇编代码</a></h2>
 <div>
   
@@ -67,31 +90,6 @@ class Animal { virtual void bark() = 0; }; class Dog : public Animal { void bark
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">Read more</a>
-    </footer>
-  
-</div>
-
-        </article>
-        
-        <article>
-          <h2><a href="https://zyx-vec.github.io/myblog/post/leveldb/">开源项目 leveldb 的编译测试</a></h2>
-<div>
-  
-    step 0 : git clone leveldb source code.
-step 1 : cd leveldb
-step 2 : make
-下一步将 include 头文件拷贝到 /usr/include/目录中。
-step 3 : sudo cp -r ./include/leveldb /usr/include
-​ db.h 可能不在 leveldb 目录中，找到他并拷贝到 /usr/include 中即可。
-以下步骤将生成的动态链接库拷贝到 /usr/lib 目录中，创建两个软连接，最终得到 libleveldb.so
-step 4 : sudo cp ./out-shared/libleveldb.so.1.18 /usr/lib
-step 5 : cd /usr/lib
-step 6 : sudo ln -s libleveldb.so.1.18 libleveldb.so.1
-step 7 : sudo ln -s libleveldb.so.1 libleveldb.so
-step 8 : sudo ldconfig
-
-    <footer>
-      <a href="https://zyx-vec.github.io/myblog/post/leveldb/">Read more</a>
     </footer>
   
 </div>

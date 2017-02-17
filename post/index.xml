@@ -6,8 +6,88 @@
     <description>Recent content in Posts on TL;DR BLOG</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-CN</language>
-    <lastBuildDate>Tue, 14 Feb 2017 15:51:46 +0800</lastBuildDate>
+    <lastBuildDate>Thu, 16 Feb 2017 11:48:29 +0800</lastBuildDate>
     <atom:link href="https://zyx-vec.github.io/myblog/post/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>单链表环和相交问题</title>
+      <link>https://zyx-vec.github.io/myblog/post/is_singled_linked_list_cycle/</link>
+      <pubDate>Thu, 16 Feb 2017 11:48:29 +0800</pubDate>
+      
+      <guid>https://zyx-vec.github.io/myblog/post/is_singled_linked_list_cycle/</guid>
+      <description>&lt;p&gt;&lt;strong&gt;题目&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;如何判断给定的一个单链表中是否存在环？找出环的起始位置？示例图如下，图中存在一个环，红色节点表示环的起点。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/zyx-vec/Image/master/is_cycled.png&#34; alt=&#34;图例1&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;思路&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;利用快慢指针，一个指针1步每次，另一个指针2步每次，那么如果存在环的话，两个指针是一定会相遇的！为什么呢？&lt;/p&gt;
+
+&lt;p&gt;现形象比喻指针p1速度为1步/s，p2的速度为2步/s，那么经过n秒之后，两指针之间的距离为：n 步 = 2*n - n；可见两指针之间拉开的距离是随着时间“连续”增长的，所以说：如果存在环那么他俩是一定会相遇的，但如果不存在环的话p2一定会先于p1到达终点，他俩不会相遇。&lt;/p&gt;
+
+&lt;p&gt;但是如果存在环的话，如何求得环的起点呢？&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/zyx-vec/Image/master/is_cycled1.png&#34; alt=&#34;示例2&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;现假设扯住链表的起点，将其精密的“裹在”环的周边；由之前的分析可知他俩一定会相遇，现假设相遇点为A，从上图中易知相遇的A点一定是和链表的起点“重合”的，为什么？因为p1和p2相遇时一定是p2比p1多跑了x圈，这里x是多少不重要（x的值和紧密环绕的那一部分的长度相关）！这就好像是跑步，你的速度是旁边某人的2倍，当你俩相遇时，你继续以2倍于他的速度行进，那么下一时刻就是你去要“追他一圈”了（因为你比他快），又因为你俩之间的距离时连续增长的，所以追他一圈就会耗掉“他”跑1圈的时间，那么你俩相遇的点一定还会是刚才的哪个点。换个说法就是p1和p2从同一个起点出发，那么每次他俩相遇的点都会是紧密环绕之后重合的哪个点！&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/zyx-vec/Image/master/is_cycled2.png&#34; alt=&#34;示例3&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;如上图所示，两指针相遇点就在黑色的节点；当处于两值都处于相遇的黑色节点时，将p2拉回到蓝色的节点，然后两这同时以1步/s的速度行进，那么当他俩碰头时就是红色的节点，也就是环的起点。&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;代码&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-c++&#34;&gt;template &amp;lt;typename T&amp;gt;
+inline bool SingleLinkedList&amp;lt;T&amp;gt;::IsCycled() {
+  bool ret;
+  Node* p1, *p2;
+  p1 = p2 = this-&amp;gt;head;
+  while(true) {
+    p1 = p1-&amp;gt;next_; // p1走一步
+    if(p2-&amp;gt;next_ == NULL) { // p2更快，如果p2-&amp;gt;next_ = NULL就表示没有环
+      ret = false;
+      break;
+    }
+    else
+      p2 = p2-&amp;gt;next_-&amp;gt;next_; // p2走两步
+    if(p1 == p2) { // 如果p1和p2相遇，那么表示有环
+      ret = true;
+      break;
+    }
+  }
+  if(ret) { // 如果有环，那么根据前面的分析，让p2回到链表头，和p1都以1步的速度前经，直到相遇
+    int i = 0;
+    p2 = this-&amp;gt;head;
+    while(p1 != p2) {
+      p1 = p1-&amp;gt;next_;
+      p2 = p2-&amp;gt;next_;
+      i++;
+    }
+    cout &amp;lt;&amp;lt; &amp;quot;Cycle starts at: &amp;quot; &amp;lt;&amp;lt; i &amp;lt;&amp;lt; endl; // 此时p1和p2都指向了环的起点
+  }
+  return ret;
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;拓展&lt;/strong&gt;&lt;/p&gt;
+
+&lt;p&gt;给定两个没有环的单链表，判断两链表是否相交，并求出交点？&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/zyx-vec/Image/master/is_cycled3.png&#34; alt=&#34;示例4&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;如上图所示，判断是否相交只需要从两个链表头同时出发，遍历下去，最后会同时达到同一个尾节点则表示相交。&lt;/p&gt;
+
+&lt;p&gt;如何找出交点呢？&lt;/p&gt;
+
+&lt;p&gt;把绿色节点的next_域指向一个链表的头形成一个环，问题就变成了前述的问题了！&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;https://raw.githubusercontent.com/zyx-vec/Image/master/is_cycled4.png&#34; alt=&#34;示例4&#34; /&gt;&lt;/p&gt;
+
+&lt;p&gt;用同样的方法即可找出红色的两链表的交点。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>在 C 中内嵌汇编代码</title>
