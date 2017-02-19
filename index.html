@@ -35,6 +35,76 @@
 
         
         <article>
+          <h2><a href="https://zyx-vec.github.io/myblog/post/utf-8/">utf 8</a></h2>
+<div>
+  
+    <p><strong>Unicode</strong></p>
+
+<p>计算机对字符的编码进过了长时间的发展，从最初的ASCII码到百花齐放的各种编码方式，直到Unicode标准的出现，编码方式逐渐得到了统一。Unicode是在通用字符集 - UCS(Universal Character Set) 的基础上发展起来的。并且Unicode还处于不断的发展过程中，目前的最新版本为9.0.0，于2016年发布，共收录了128172个字符，其中还包含了新增的72个emoji字符，<a href="http://www.unicode.org/emoji/charts/emoji-versions.html#v9.0_2016">表情符一览</a>，:-)。</p>
+
+<p>但是Unicode并不是编码方式，它只是一个字符集标准，规定了某一字符在这个标准中用哪个码点（code point）来表示，例如字符ø于Unicode字符集标准中的码点为：U+00F8。U+用作前缀，00F8表示其对应的码点的值；再比如中文字“江”再Unicode标准中对应为：U+6C5F。</p>
+
+<p>而UTF-8/UTF-16等才是编码方式。我们都知道计算机中寻址存储单元是按照字节来进行的；显然现如今Unicode中有128172个字符，也就是他们的标号最起码都有128172个，如何用字节来对他们进行编码呢？因此Unicode制定了几种存储这些码点的方式（Uniform Transformation Format, UTF），包括UTF-8、UTF-16和UTF-32；其中只有UTF-32是定长编码方式。</p>
+
+<p>Unicode目前分为17组进行编排，每一个组称为一个平面，有65536个码点；第0平面称为基本多文本平面（BMP，0000-FFFF），但范围U+D800到U+DFFF中不存在任何字符！基本多文种平面中约定了此范围用于UTF-16扩展标识辅助平面。</p>
+
+<p>U+D800 - U+DFFF范围又被分为了 D800-DBFF 和 DC00-DFFF 两个区域，第一个称为UTF-16的高半区，后一个称为UTF-16的低半区。</p>
+
+<p>UTF-8于现实中使用较于其他两种方式更为流行，主要因为UTF-8以单字节为分割，兼容了ASCII码，同时单字节还有一个好处就是没有字节序的问题！而UTF-16和UTF-32就必须规定存储字节序。</p>
+
+<p>UTF-8的码点到存储字节的转换方式如下所示：</p>
+
+<pre><code class="language-C">Char. number range     |        UTF-8 octet sequence
+      (hexadecimal)    |              (binary)
+-----------------------+---------------------------------------------
+   0000 0000-0000 007F | 0xxxxxxx
+   0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+</code></pre>
+
+<p>第一列表示码点所在的范围，第二列为编码拆解的方式，把比特位按照从左到右的顺序放到x中即可。0至7F用一个字节表示即可，和ASCII码兼容；0080至07FF用两个字节表示，第一个字节以110开头，表示两个字节，将比特位一次填入x占位符中即可得到编码的字符序列。一下的两个范围类似，需要字节n个数用第一个字节的开头n个1加一个0的方式来表示即可。</p>
+
+<p><strong>C代码</strong></p>
+
+<pre><code class="language-c">size_t unicode_utf_8(const unsigned code_point, char* dest) {
+  size_t n;
+  char* p = dest;
+
+#define APPEND(ptr,c) do { *ptr++ = (char)(c); } while(0)
+
+  if(code_point &lt;= 0x007F) {
+    APPEND(p, code_point);
+    n = 1;
+  }
+  else if(code_point &lt;= 0x07FF) {
+    APPEND(p, 0xC0 | ((code_point &gt;&gt;  6) &amp; 0xFF));
+    APPEND(p, 0x80 | ( code_point        &amp; 0x3F));
+    n = 2;
+  }
+  else if(code_point &lt;= 0xFFFF) {
+    APPEND(p, 0xE0 | ((code_point &gt;&gt; 12) &amp; 0xFF)); /* 12 == 6 + 6 */
+    APPEND(p, 0x80 | ((code_point &gt;&gt;  6) &amp; 0x3F)); /* 6 bits */
+    APPEND(p, 0x80 | ( code_point        &amp; 0x3F)); /* 6 bits */
+    n = 3;
+  }
+  else {
+    APPEND(p, 0xF0 | ((code_point &gt;&gt; 18) &amp; 0xFF)); /* 0xF0 == 11110000 */
+    APPEND(p, 0x80 | ((code_point &gt;&gt; 12) &amp; 0x3F)); /* 0x80 == 10000000 */
+    APPEND(p, 0x80 | ((code_point &gt;&gt;  6) &amp; 0x3F)); /* 0x3F == 00110000 */
+    APPEND(p, 0x80 | ( code_point        &amp; 0x3F));
+    n = 4;
+  }
+  return n;
+}
+</code></pre>
+
+  
+</div>
+
+        </article>
+        
+        <article>
           <h2><a href="https://zyx-vec.github.io/myblog/post/is_singled_linked_list_cycle/">单链表环和相交问题</a></h2>
 <div>
   
@@ -44,7 +114,7 @@
 利用快慢指针，一个指针1步每次，另一个指针2步每次，那么如果存在环的话，两个指针是一定会相遇的！为什么呢？
 现形象比喻指针p1速度为1步/s，p2的速度为2步/s，那么经过n秒之后，两指针之间的距离为：n 步 = 2*n - n；可见两指针之间拉开的距离是随着时间“连续”增长的，所以说：如果存在环那么他俩是一定会相遇的，但如果不存在环的话p2一定会先于p1到达终点，他俩不会相遇。
 但是如果存在环的话，如何求得环的起点呢？
-现假设扯住链表的起点，将其精密的“裹在”环的周边；由之前的分析可知他俩一定会相遇，现假设相遇点为A，从上图中易知相遇的A点一定是和链表的起点“重合”的，为什么？因为p1和p2相遇时一定是p2比p1多跑了x圈，这里x是多少不重要（x的值和紧密环绕的那一部分的长度相关）！这就好像是跑步，你的速度是旁边某人的2倍，当你俩相遇时，你继续以2倍于他的速度行进，那么下一时刻就是你去要“追他一圈”了（因为你比他快），又因为你俩之间的距离时连续增长的，所以追他一圈就会耗掉“他”跑1圈的时间，那么你俩相遇的点一定还会是刚才的哪个点。换个说法就是p1和p2从同一个起点出发，那么每次他俩相遇的点都会是紧密环绕之后重合的哪个点！
+现假设扯住链表的起点，将其精密的“裹在”环的周边；由之前的分析可知他俩一定会相遇，现假设相遇点为A，从上图中易知相遇的A点一定是和链表的起点“重合”的，为什么？因为p1和p2相遇时一定是p2比p1多跑了x圈，这里x是多少不重要（x的值和紧密环绕的那一部分的长度相关）！这就好像是跑步，你的速度是旁边某人的2倍，当你俩相遇时，你继续以2倍于他的速度行进，那么下一时刻就是你去要“追他一圈”了（因为你比他快），又因为你俩之间的距离是连续增长的，所以追他一圈就会耗掉“他”跑1圈的时间，那么你俩相遇的点一定还会是刚才的哪个点。换个说法就是p1和p2从同一个起点出发，那么每次他俩相遇的点都会是紧密环绕之后重合的哪个点！
 如上图所示，两指针相遇点就在黑色的节点；当处于两值都处于相遇的黑色节点时，将p2拉回到蓝色的节点，然后两这同时以1步/s的速度行进，那么当他俩碰头时就是红色的节点，也就是环的起点。
 代码
 template &lt;typename T&gt; inline bool SingleLinkedList&lt;T&gt;::IsCycled() { bool ret; Node* p1, *p2; p1 = p2 = this-&gt;head; while(true) { p1 = p1-&gt;next_; // p1走一步 if(p2-&gt;next_ == NULL) { // p2更快，如果p2-&gt;next_ = NULL就表示没有环 ret = false; break; } else p2 = p2-&gt;next_-&gt;next_; // p2走两步 if(p1 == p2) { // 如果p1和p2相遇，那么表示有环 ret = true; break; } } if(ret) { // 如果有环，那么根据前面的分析，让p2回到链表头，和p1都以1步的速度前经，直到相遇 int i = 0; p2 = this-&gt;head; while(p1 !
@@ -71,25 +141,6 @@ __asm__(&quot;inst0\n\t&quot;	/* basic instructions */ &quot;inst1\n\t&quot; :&q
 
     <footer>
       <a href="https://zyx-vec.github.io/myblog/post/inline_asm_in_gcc/">Read more</a>
-    </footer>
-  
-</div>
-
-        </article>
-        
-        <article>
-          <h2><a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">探讨C&#43;&#43; 对象模型</a></h2>
-<div>
-  
-    C++ 起源于 C，兼具底层和高级抽象的能力，能够进行底层操作，往往也称为“面向内存”编程；和 Java、Python 等语言不一样，C++ 中的“对象”的内存布局是透明的，可以被利用的（大雾，切勿依靠没有写入标准的一般经验），也即“面向内存”编程，而在 Java 中创建一个自己编写类的对象，但是对象实例中包含很多的“控制”和“辅助”信息，比如对象头等，内存效率比C++低，性能也更低。
-除开 C++ 中的基本类型，掌握 C++ 中的对象模型，对于理解一些C++中的常见套路是很有帮助的，例如 C++ 中的 rule of three，运行时多态等等。
-而对象模型中最重要的就是 virtual 机制，C++ 就是通过其实现运行时多态（runtime polymorphism）。“多态”按字面意思即多种表现形态，C++中就是利用相同的接口表现出不同的运行结果，故有编译时多态（compile time polymorphism）- 重载、模板 和 运行时多态（runtime compile polymorphism）。我们都知道 C++ 有强大的模板，而模板的开销主要在编译时，对应的运行时多态的开销主要体现在对象模型上，其中最重要的就是虚函数指针和虚函数表的存在，本文的目的就是探讨C++中的对象模型中的 virtual 机制。
-虚函数的作用
-虚函数的作用就是运行时多态，先看如下代码
-class Animal { virtual void bark() = 0; }; class Dog : public Animal { void bark() { cout &lt;&lt; &quot;WangWang~\n&quot;; } }; class Cat : public Animal { void bark() { cout &lt;&lt; &quot;Meow~\n&quot;; } }; Animal *pet1 = new Dog(); Animal *pet2 = new Cat(); pet1-&gt;bark();	// WangWang~ pet2-&gt;bark();	// Meow~  由此可见，利用同样的运行时类型 Animal*，使用同样的接口（Interface），最终表现出不一样的行为状态。这就是运行时多态的目标，具体参考《C++程序设计与演化》（C++ D&amp;E）来探讨该技术的来源，和其中所经历的过程。
-
-    <footer>
-      <a href="https://zyx-vec.github.io/myblog/post/CPP_Object_Model/">Read more</a>
     </footer>
   
 </div>

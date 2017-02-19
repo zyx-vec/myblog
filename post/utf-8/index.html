@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+  
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="author" content="tldr">
+  <meta name="generator" content="Hugo 0.18.1" />
+  <title>utf 8 — TL;DR BLOG</title>
+
+  <meta name="description" content="">
+  <link rel="canonical" href="https://zyx-vec.github.io/myblog/post/utf-8/">
+  <link href="" rel="alternate" type="application/rss+xml" title="TL;DR BLOG">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Source+Code+Pro|Arvo:400,700">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/highlight.css">
+  <link rel="stylesheet" href="https://zyx-vec.github.io/myblog/css/paperback.css">
+</head>
+
+
+  <body>
+    <div class="container">
+
+      <header>
+  <h1>utf 8</h1>
+
+  
+  <time datetime="2017-02-19 20:25:00 &#43;0800 CST">2017/02/19</time>
+  
+
+  
+</header>
+
+
+      <article>
+        <p><strong>Unicode</strong></p>
+
+<p>计算机对字符的编码进过了长时间的发展，从最初的ASCII码到百花齐放的各种编码方式，直到Unicode标准的出现，编码方式逐渐得到了统一。Unicode是在通用字符集 - UCS(Universal Character Set) 的基础上发展起来的。并且Unicode还处于不断的发展过程中，目前的最新版本为9.0.0，于2016年发布，共收录了128172个字符，其中还包含了新增的72个emoji字符，<a href="http://www.unicode.org/emoji/charts/emoji-versions.html#v9.0_2016">表情符一览</a>，:-)。</p>
+
+<p>但是Unicode并不是编码方式，它只是一个字符集标准，规定了某一字符在这个标准中用哪个码点（code point）来表示，例如字符ø于Unicode字符集标准中的码点为：U+00F8。U+用作前缀，00F8表示其对应的码点的值；再比如中文字“江”再Unicode标准中对应为：U+6C5F。</p>
+
+<p>而UTF-8/UTF-16等才是编码方式。我们都知道计算机中寻址存储单元是按照字节来进行的；显然现如今Unicode中有128172个字符，也就是他们的标号最起码都有128172个，如何用字节来对他们进行编码呢？因此Unicode制定了几种存储这些码点的方式（Uniform Transformation Format, UTF），包括UTF-8、UTF-16和UTF-32；其中只有UTF-32是定长编码方式。</p>
+
+<p>Unicode目前分为17组进行编排，每一个组称为一个平面，有65536个码点；第0平面称为基本多文本平面（BMP，0000-FFFF），但范围U+D800到U+DFFF中不存在任何字符！基本多文种平面中约定了此范围用于UTF-16扩展标识辅助平面。</p>
+
+<p>U+D800 - U+DFFF范围又被分为了 D800-DBFF 和 DC00-DFFF 两个区域，第一个称为UTF-16的高半区，后一个称为UTF-16的低半区。</p>
+
+<p>UTF-8于现实中使用较于其他两种方式更为流行，主要因为UTF-8以单字节为分割，兼容了ASCII码，同时单字节还有一个好处就是没有字节序的问题！而UTF-16和UTF-32就必须规定存储字节序。</p>
+
+<p>UTF-8的码点到存储字节的转换方式如下所示：</p>
+
+<pre><code class="language-C">Char. number range     |        UTF-8 octet sequence
+      (hexadecimal)    |              (binary)
+-----------------------+---------------------------------------------
+   0000 0000-0000 007F | 0xxxxxxx
+   0000 0080-0000 07FF | 110xxxxx 10xxxxxx
+   0000 0800-0000 FFFF | 1110xxxx 10xxxxxx 10xxxxxx
+   0001 0000-0010 FFFF | 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+</code></pre>
+
+<p>第一列表示码点所在的范围，第二列为编码拆解的方式，把比特位按照从左到右的顺序放到x中即可。0至7F用一个字节表示即可，和ASCII码兼容；0080至07FF用两个字节表示，第一个字节以110开头，表示两个字节，将比特位一次填入x占位符中即可得到编码的字符序列。一下的两个范围类似，需要字节n个数用第一个字节的开头n个1加一个0的方式来表示即可。</p>
+
+<p><strong>C代码</strong></p>
+
+<pre><code class="language-c">size_t unicode_utf_8(const unsigned code_point, char* dest) {
+  size_t n;
+  char* p = dest;
+
+#define APPEND(ptr,c) do { *ptr++ = (char)(c); } while(0)
+
+  if(code_point &lt;= 0x007F) {
+    APPEND(p, code_point);
+    n = 1;
+  }
+  else if(code_point &lt;= 0x07FF) {
+    APPEND(p, 0xC0 | ((code_point &gt;&gt;  6) &amp; 0xFF));
+    APPEND(p, 0x80 | ( code_point        &amp; 0x3F));
+    n = 2;
+  }
+  else if(code_point &lt;= 0xFFFF) {
+    APPEND(p, 0xE0 | ((code_point &gt;&gt; 12) &amp; 0xFF)); /* 12 == 6 + 6 */
+    APPEND(p, 0x80 | ((code_point &gt;&gt;  6) &amp; 0x3F)); /* 6 bits */
+    APPEND(p, 0x80 | ( code_point        &amp; 0x3F)); /* 6 bits */
+    n = 3;
+  }
+  else {
+    APPEND(p, 0xF0 | ((code_point &gt;&gt; 18) &amp; 0xFF)); /* 0xF0 == 11110000 */
+    APPEND(p, 0x80 | ((code_point &gt;&gt; 12) &amp; 0x3F)); /* 0x80 == 10000000 */
+    APPEND(p, 0x80 | ((code_point &gt;&gt;  6) &amp; 0x3F)); /* 0x3F == 00110000 */
+    APPEND(p, 0x80 | ( code_point        &amp; 0x3F));
+    n = 4;
+  }
+  return n;
+}
+</code></pre>
+
+      </article>
+
+      <nav class="site-nav">
+  <a href="https://zyx-vec.github.io/myblog/">Home</a>
+  <a href="https://zyx-vec.github.io/myblog/post/">All posts</a>
+
+  
+
+    
+
+</nav>
+
+
+      <footer class="site-footer">
+  <span class="owner">©2016 tldr</span>
+
+  
+</footer>
+
+
+    </div>
+
+  
+<script src="https://zyx-vec.github.io/myblog/js/highlight.pack.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+
+  </body>
+</html>
